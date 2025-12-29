@@ -54,4 +54,12 @@ class Document extends Model
     {
         return $this->hasMany(Relative::class)->orderBy('order_index');
     }
+
+    /**
+     * Get the work experiences for the document.
+     */
+    public function workExperiences(): HasMany
+    {
+        return $this->hasMany(WorkExperience::class)->orderBy('order_index');
+    }
 }

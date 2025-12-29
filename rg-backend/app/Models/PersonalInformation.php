@@ -21,8 +21,8 @@ class PersonalInformation extends Model
         'tugilgan_sana',
         'tugilgan_joyi',
         'millati',
-        'partiyaviyligi',
         'malumoti',
+        'partiyaviyligi',
         'malumoti_boyicha_mutaxassisligi',
         'qaysi_chet_tillarini_biladi',
         'xalq_deputatlari',
@@ -35,6 +35,7 @@ class PersonalInformation extends Model
 
     /**
      * Get the document that owns the personal information.
+     * @return Illuminate\Database\Eloquent\Relations\BelongsTo;
      */
     public function document(): BelongsTo
     {

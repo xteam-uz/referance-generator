@@ -7,12 +7,12 @@ use App\Models\Document;
 use App\Models\EducationRecord;
 use App\Models\PersonalInformation;
 use App\Models\Relative;
+use App\Models\WorkExperience;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Mpdf\Mpdf;
+use Spatie\Browsershot\Browsershot;
 
 class DocumentController extends Controller
 {
@@ -41,31 +41,65 @@ class DocumentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'document_type' => 'required|in:obyektivka,ishga_olish_ariza,kochirish_ariza',
+            // personal information
             'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:1024',
             'personal_information' => 'required|array',
             'personal_information.familya' => 'required|string|max:255',
             'personal_information.ism' => 'required|string|max:255',
             'personal_information.sharif' => 'required|string|max:255',
-            'personal_information.joriy_lavozim_sanasi' => 'required|string|max:255',
-            'personal_information.joriy_lavozim_toliq' => 'required|string|max:500',
             'personal_information.tugilgan_sana' => 'required|date',
             'personal_information.tugilgan_joyi' => 'required|string|max:255',
             'personal_information.millati' => 'required|string|max:255',
             'personal_information.partiyaviyligi' => 'nullable|string|max:255',
-            'personal_information.malumoti' => "required|in:Oliy,O'rta maxsus,O'rta",
-            'personal_information.malumoti_boyicha_mutaxassisligi' => 'nullable|string|max:255',
-            'personal_information.qaysi_chet_tillarini_biladi' => 'nullable|string|max:255',
             'personal_information.xalq_deputatlari' => 'nullable|string',
+            // work experiences
+            'work_experiences' => 'required|array',
+            'work_experiences.*.start_date' => 'required|date',
+            'work_experiences.*.end_date' => 'nullable|date',
+            'work_experiences.*.info' => 'required|string|max:255',
+            // education records
             'education_records' => 'required|array',
-            'education_records.*.description' => 'required|string',
+            'education_records.*.malumoti' => "required|in:Oliy,O'rta maxsus,O'rta",
+            'education_records.*.tamomlagan' => 'nullable|string|max:255',
+            'education_records.*.mutaxassisligi' => 'nullable|string|max:255',
+            'education_records.*.ilmiy_daraja' => 'nullable|string|max:255',
+            'education_records.*.ilmiy_unvoni' => 'nullable|string|max:255',
+            'education_records.*.chet_tillari' => 'nullable|string|max:255',
+            'education_records.*.maxsus_unvoni' => 'nullable|string|max:255',
+            'education_records.*.davlat_mukofoti' => 'nullable|string|max:255',
+            // relatives
             'relatives' => 'required|array',
             'relatives.*.qarindoshligi' => 'required|in:Otasi,Onasi,Akasi,Ukasi,Opasi',
             'relatives.*.fio' => 'required|string|max:255',
             'relatives.*.tugilgan' => 'required|string|max:255',
             'relatives.*.vafot_etgan' => 'boolean',
-            'relatives.*.ish_joyi' => 'required|string|max:500',
-            'relatives.*.turar_joyi' => 'required|string|max:255',
+            'relatives.*.ish_joyi' => 'nullable|string|max:500',
+            'relatives.*.turar_joyi' => 'nullable|string|max:255',
+            'relatives.*.vafot_etgan_yili' => 'nullable|string|max:255',
+            'relatives.*.kasbi' => 'nullable|string|max:255',
         ]);
+
+        // Custom validation: vafot_etgan true bo'lsa vafot_etgan_yili va kasbi required
+        // vafot_etgan false bo'lsa ish_joyi va turar_joyi required
+        if ($request->has('relatives')) {
+            foreach ($request->relatives as $index => $relative) {
+                if (isset($relative['vafot_etgan']) && $relative['vafot_etgan']) {
+                    if (empty($relative['vafot_etgan_yili'])) {
+                        $validator->errors()->add("relatives.{$index}.vafot_etgan_yili", "Vafot etgan yili to'ldirilishi shart.");
+                    }
+                    if (empty($relative['kasbi'])) {
+                        $validator->errors()->add("relatives.{$index}.kasbi", "Kasbi to'ldirilishi shart.");
+                    }
+                } else {
+                    if (empty($relative['ish_joyi'])) {
+                        $validator->errors()->add("relatives.{$index}.ish_joyi", "Ish joyi va lavozimi to'ldirilishi shart.");
+                    }
+                    if (empty($relative['turar_joyi'])) {
+                        $validator->errors()->add("relatives.{$index}.turar_joyi", "Turar joyi to'ldirilishi shart.");
+                    }
+                }
+            }
+        }
 
         if ($validator->fails()) {
             return response()->json([
@@ -104,43 +138,65 @@ class DocumentController extends Controller
             $personalInfoData['partiyaviyligi'] = !empty($personalInfoData['partiyaviyligi'] ?? null)
                 ? $personalInfoData['partiyaviyligi']
                 : null;
-            $personalInfoData['malumoti_boyicha_mutaxassisligi'] = !empty($personalInfoData['malumoti_boyicha_mutaxassisligi'] ?? null)
-                ? $personalInfoData['malumoti_boyicha_mutaxassisligi']
-                : null;
-            $personalInfoData['qaysi_chet_tillarini_biladi'] = !empty($personalInfoData['qaysi_chet_tillarini_biladi'] ?? null)
-                ? $personalInfoData['qaysi_chet_tillarini_biladi']
-                : null;
             $personalInfoData['xalq_deputatlari'] = !empty($personalInfoData['xalq_deputatlari'] ?? null)
                 ? $personalInfoData['xalq_deputatlari']
                 : null;
+            // Remove fields that don't exist in personal_information table
+            unset($personalInfoData['malumoti']);
+            unset($personalInfoData['malumoti_boyicha_mutaxassisligi']);
+            unset($personalInfoData['qaysi_chet_tillarini_biladi']);
             PersonalInformation::create($personalInfoData);
 
             // Create education records
             foreach ($request->education_records as $index => $educationRecord) {
                 EducationRecord::create([
                     'document_id' => $document->id,
-                    'description' => $educationRecord['description'],
+                    'malumoti' => $educationRecord['malumoti'],
+                    'tamomlagan' => $educationRecord['tamomlagan'] ?? null,
+                    'mutaxassisligi' => $educationRecord['mutaxassisligi'] ?? null,
+                    'ilmiy_daraja' => $educationRecord['ilmiy_daraja'] ?? null,
+                    'ilmiy_unvoni' => $educationRecord['ilmiy_unvoni'] ?? null,
+                    'chet_tillari' => $educationRecord['chet_tillari'] ?? null,
+                    'maxsus_unvoni' => $educationRecord['maxsus_unvoni'] ?? null,
+                    'davlat_mukofoti' => $educationRecord['davlat_mukofoti'] ?? null,
                     'order_index' => $index,
                 ]);
             }
 
             // Create relatives
             foreach ($request->relatives as $index => $relative) {
+                $vafotEtgan = $relative['vafot_etgan'] ?? false;
                 Relative::create([
                     'document_id' => $document->id,
                     'qarindoshligi' => $relative['qarindoshligi'],
                     'fio' => $relative['fio'],
                     'tugilgan' => $relative['tugilgan'],
-                    'vafot_etgan' => $relative['vafot_etgan'] ?? false,
-                    'ish_joyi' => $relative['ish_joyi'],
-                    'turar_joyi' => $relative['turar_joyi'],
+                    'vafot_etgan' => $vafotEtgan,
+                    'ish_joyi' => $vafotEtgan ? null : ($relative['ish_joyi'] ?? null),
+                    'turar_joyi' => $vafotEtgan ? null : ($relative['turar_joyi'] ?? null),
+                    'vafot_etgan_yili' => $vafotEtgan ? ($relative['vafot_etgan_yili'] ?? null) : null,
+                    'kasbi' => $vafotEtgan ? ($relative['kasbi'] ?? null) : null,
                     'order_index' => $index,
                 ]);
             }
 
+            // Create work experiences
+            foreach ($request->work_experiences as $workExperience) {
+                WorkExperience::create([
+                    'document_id' => $document->id,
+                    'start_date' => $workExperience['start_date'],
+                    'end_date' => $workExperience['end_date'],
+                    'info' => $workExperience['info'],
+                ]);
+            }
+
+            // Update status to 'completed' if all required data is present
+            // (This is optional - you can also let user manually set status to 'completed')
+            // For now, we keep it as 'draft' and let user update it manually
+
             DB::commit();
 
-            $document->load(['personalInformation', 'educationRecords', 'relatives']);
+            $document->load(['personalInformation', 'educationRecords', 'relatives', 'workExperiences']);
 
             return response()->json([
                 'success' => true,
@@ -163,7 +219,7 @@ class DocumentController extends Controller
     public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
-        $document = Document::with(['personalInformation', 'educationRecords', 'relatives'])
+        $document = Document::with(['personalInformation', 'educationRecords', 'relatives', 'workExperiences'])
             ->where('id', $id)
             ->where('user_id', $user->id)
             ->first();
@@ -213,20 +269,55 @@ class DocumentController extends Controller
             'personal_information.tugilgan_joyi' => 'sometimes|string|max:255',
             'personal_information.millati' => 'sometimes|string|max:255',
             'personal_information.partiyaviyligi' => 'nullable|string|max:255',
-            'personal_information.malumoti' => "sometimes|in:Oliy,O'rta maxsus,O'rta",
-            'personal_information.malumoti_boyicha_mutaxassisligi' => 'nullable|string|max:255',
-            'personal_information.qaysi_chet_tillarini_biladi' => 'nullable|string|max:255',
             'personal_information.xalq_deputatlari' => 'nullable|string',
+            // work experiences
+            'work_experiences' => 'sometimes|array',
+            'work_experiences.*.start_date' => 'sometimes|date',
+            'work_experiences.*.end_date' => 'nullable|date',
+            'work_experiences.*.info' => 'sometimes|string|max:255',
+            // education records
             'education_records' => 'sometimes|array',
-            'education_records.*.description' => 'sometimes|string',
+            'education_records.*.malumoti' => "sometimes|in:Oliy,O'rta maxsus,O'rta",
+            'education_records.*.tamomlagan' => 'nullable|string|max:255',
+            'education_records.*.mutaxassisligi' => 'nullable|string|max:255',
+            'education_records.*.ilmiy_daraja' => 'nullable|string|max:255',
+            'education_records.*.ilmiy_unvoni' => 'nullable|string|max:255',
+            'education_records.*.chet_tillari' => 'nullable|string|max:255',
+            'education_records.*.maxsus_unvoni' => 'nullable|string|max:255',
+            'education_records.*.davlat_mukofoti' => 'nullable|string|max:255',
+            // relatives
             'relatives' => 'sometimes|array',
             'relatives.*.qarindoshligi' => 'sometimes|in:Otasi,Onasi,Akasi,Ukasi,Opasi',
             'relatives.*.fio' => 'sometimes|string|max:255',
             'relatives.*.tugilgan' => 'sometimes|string|max:255',
             'relatives.*.vafot_etgan' => 'boolean',
-            'relatives.*.ish_joyi' => 'sometimes|string|max:500',
-            'relatives.*.turar_joyi' => 'sometimes|string|max:255',
+            'relatives.*.ish_joyi' => 'nullable|string|max:500',
+            'relatives.*.turar_joyi' => 'nullable|string|max:255',
+            'relatives.*.vafot_etgan_yili' => 'nullable|string|max:255',
+            'relatives.*.kasbi' => 'nullable|string|max:255',
         ]);
+
+        // Custom validation: vafot_etgan true bo'lsa vafot_etgan_yili va kasbi required
+        // vafot_etgan false bo'lsa ish_joyi va turar_joyi required
+        if ($request->has('relatives')) {
+            foreach ($request->relatives as $index => $relative) {
+                if (isset($relative['vafot_etgan']) && $relative['vafot_etgan']) {
+                    if (empty($relative['vafot_etgan_yili'])) {
+                        $validator->errors()->add("relatives.{$index}.vafot_etgan_yili", "Vafot etgan yili to'ldirilishi shart.");
+                    }
+                    if (empty($relative['kasbi'])) {
+                        $validator->errors()->add("relatives.{$index}.kasbi", "Kasbi to'ldirilishi shart.");
+                    }
+                } else {
+                    if (empty($relative['ish_joyi'])) {
+                        $validator->errors()->add("relatives.{$index}.ish_joyi", "Ish joyi va lavozimi to'ldirilishi shart.");
+                    }
+                    if (empty($relative['turar_joyi'])) {
+                        $validator->errors()->add("relatives.{$index}.turar_joyi", "Turar joyi to'ldirilishi shart.");
+                    }
+                }
+            }
+        }
 
         if ($validator->fails()) {
             return response()->json([
@@ -260,15 +351,13 @@ class DocumentController extends Controller
                 $personalInfoData['partiyaviyligi'] = !empty($personalInfoData['partiyaviyligi'] ?? null)
                     ? $personalInfoData['partiyaviyligi']
                     : null;
-                $personalInfoData['malumoti_boyicha_mutaxassisligi'] = !empty($personalInfoData['malumoti_boyicha_mutaxassisligi'] ?? null)
-                    ? $personalInfoData['malumoti_boyicha_mutaxassisligi']
-                    : null;
-                $personalInfoData['qaysi_chet_tillarini_biladi'] = !empty($personalInfoData['qaysi_chet_tillarini_biladi'] ?? null)
-                    ? $personalInfoData['qaysi_chet_tillarini_biladi']
-                    : null;
                 $personalInfoData['xalq_deputatlari'] = !empty($personalInfoData['xalq_deputatlari'] ?? null)
                     ? $personalInfoData['xalq_deputatlari']
                     : null;
+                // Remove fields that don't exist in personal_information table
+                unset($personalInfoData['malumoti']);
+                unset($personalInfoData['malumoti_boyicha_mutaxassisligi']);
+                unset($personalInfoData['qaysi_chet_tillarini_biladi']);
 
                 $personalInfo->update($personalInfoData);
             }
@@ -279,7 +368,14 @@ class DocumentController extends Controller
                 foreach ($request->education_records as $index => $educationRecord) {
                     EducationRecord::create([
                         'document_id' => $document->id,
-                        'description' => $educationRecord['description'],
+                        'malumoti' => $educationRecord['malumoti'] ?? null,
+                        'tamomlagan' => $educationRecord['tamomlagan'] ?? null,
+                        'mutaxassisligi' => $educationRecord['mutaxassisligi'] ?? null,
+                        'ilmiy_daraja' => $educationRecord['ilmiy_daraja'] ?? null,
+                        'ilmiy_unvoni' => $educationRecord['ilmiy_unvoni'] ?? null,
+                        'chet_tillari' => $educationRecord['chet_tillari'] ?? null,
+                        'maxsus_unvoni' => $educationRecord['maxsus_unvoni'] ?? null,
+                        'davlat_mukofoti' => $educationRecord['davlat_mukofoti'] ?? null,
                         'order_index' => $index,
                     ]);
                 }
@@ -289,22 +385,49 @@ class DocumentController extends Controller
             if ($request->has('relatives')) {
                 $document->relatives()->delete();
                 foreach ($request->relatives as $index => $relative) {
+                    $vafotEtgan = $relative['vafot_etgan'] ?? false;
                     Relative::create([
                         'document_id' => $document->id,
                         'qarindoshligi' => $relative['qarindoshligi'],
                         'fio' => $relative['fio'],
                         'tugilgan' => $relative['tugilgan'],
-                        'vafot_etgan' => $relative['vafot_etgan'] ?? false,
-                        'ish_joyi' => $relative['ish_joyi'],
-                        'turar_joyi' => $relative['turar_joyi'],
+                        'vafot_etgan' => $vafotEtgan,
+                        'ish_joyi' => $vafotEtgan ? null : ($relative['ish_joyi'] ?? null),
+                        'turar_joyi' => $vafotEtgan ? null : ($relative['turar_joyi'] ?? null),
+                        'vafot_etgan_yili' => $vafotEtgan ? ($relative['vafot_etgan_yili'] ?? null) : null,
+                        'kasbi' => $vafotEtgan ? ($relative['kasbi'] ?? null) : null,
                         'order_index' => $index,
                     ]);
                 }
             }
 
+            // Update work experiences
+            if ($request->has('work_experiences')) {
+                $document->workExperiences()->delete();
+                foreach ($request->work_experiences as $workExperience) {
+                    WorkExperience::create([
+                        'document_id' => $document->id,
+                        'start_date' => $workExperience['start_date'],
+                        'end_date' => $workExperience['end_date'],
+                        'info' => $workExperience['info'],
+                    ]);
+                }
+            }
+
+            // If status is being set to 'completed', verify all required data is present
+            if ($request->has('status') && $request->status === 'completed') {
+                // Check if all required data is present
+                if (!$document->personalInformation || !$document->educationRecords || !$document->relatives || !$document->workExperiences) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'All required data is not present',
+                    ], 422);
+                }
+            }
+
             DB::commit();
 
-            $document->load(['personalInformation', 'educationRecords', 'relatives']);
+            $document->load(['personalInformation', 'educationRecords', 'relatives', 'workExperiences']);
 
             return response()->json([
                 'success' => true,
@@ -352,7 +475,7 @@ class DocumentController extends Controller
     public function download(Request $request, string $id)
     {
         $user = $request->user();
-        $document = Document::with(['personalInformation', 'educationRecords', 'relatives'])
+        $document = Document::with(['personalInformation', 'educationRecords', 'relatives', 'workExperiences'])
             ->where('id', $id)
             ->where('user_id', $user->id)
             ->first();
@@ -365,22 +488,16 @@ class DocumentController extends Controller
         }
 
         try {
-            // Configure mPDF
-            $mpdf = new Mpdf([
-                'mode' => 'utf-8',
-                'format' => 'A4',
-                'orientation' => 'P',
-                'margin_left' => 15,
-                'margin_right' => 15,
-                'margin_top' => 20,
-                'margin_bottom' => 20,
-                'tempDir' => storage_path('app/temp'),
-            ]);
+            // Update status to 'completed' when PDF is downloaded
+            if ($document->status === 'draft') {
+                $document->update(['status' => 'completed']);
+            }
 
             // Get document data
             $pi = $document->personalInformation;
             $educationRecords = $document->educationRecords;
             $relatives = $document->relatives;
+            $workExperiences = $document->workExperiences;
 
             // Get document type label
             $documentTypeLabels = [
@@ -393,45 +510,140 @@ class DocumentController extends Controller
             // Build HTML content
             $html = '<html><head><meta charset="UTF-8"></head><body>';
             $html .= '<style>
-            body { font-family: "Times New Roman", Times, serif; font-size: 11px; line-height: 1.3; }
-            h1 { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 10px; margin-top: 0; }
-            h2 { text-align: center; font-size: 12px; font-weight: bold; margin-top: 15px; margin-bottom: 10px; }
-            .subtitle { text-align: center; font-size: 11px; margin-bottom: 15px; }
-            .content-wrapper { display: flex; }
-            .info-row { margin-bottom: 4px; line-height: 1.3; }
-            .info-label { font-weight: bold; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-            table th, table td { border: 1px solid #000; padding: 5px; text-align: left; vertical-align: top; }
-            table th { font-weight: bold; text-align: center; }
-            .photo-container { float: right; margin-left: 15px; margin-bottom: 5px; }
-            .photo-container img { width: 85px; height: 113px; border: 1px solid #000; }
-            .section { margin-top: 15px; }
-            .clear { clear: both; }
+            body { 
+                font-family: "Times New Roman", Times, serif; 
+                font-size: 12px; 
+                line-height: 1.4; 
+            }
+            h1 { 
+                text-align: center; 
+                font-size: 16px; 
+                font-weight: bold; 
+                margin-bottom: 5px; 
+                margin-top: 0; 
+            }
+            h2 { 
+                text-align: center; 
+                font-size: 14px; 
+                font-weight: bold; 
+                margin-top: 20px; 
+                margin-bottom: 10px; 
+            }
+            .name-title { 
+                text-align: center; 
+                font-size: 13px; 
+                font-weight: bold;
+                margin-bottom: 10px; 
+            }
+            .current-position {
+                text-align: left;
+                font-size: 12px;
+                margin-bottom: 15px;
+                padding-right: 140px;
+            }
+            .photo-container { 
+                position: absolute;
+                top: 15px;
+                right: 20px;
+                width: 100px;
+                height: 133px;
+            }
+            .photo-container img { 
+                width: 100px; 
+                height: 133px; 
+                border: 1px solid #000; 
+            }
+            .info-section {
+                margin-top: 15px;
+                padding-right: 120px;
+            }
+            .info-row { 
+                margin-bottom: 8px; 
+                line-height: 1.5; 
+            }
+            .info-label { 
+                font-size: 12px;
+                font-weight: bold;
+                display: block;
+                margin-bottom: 2px;
+            }
+            .info-value {
+                font-size: 11px;
+                display: block;
+                margin-bottom: 8px;
+            }
+            .two-column {
+                width: 100%;
+                margin-top: 8px;
+                margin-bottom: 8px;
+            }
+            .two-column td {
+                width: 50%;
+                vertical-align: top;
+                padding-right: 10px;
+            }
+            table.relatives-table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin-top: 15px; 
+                font-size: 11px; 
+            }
+            table.relatives-table th, 
+            table.relatives-table td { 
+                border: 1px solid #000; 
+                padding: 6px; 
+                text-align: center; 
+                vertical-align: middle; 
+            }
+            table.relatives-table th { 
+                font-weight: bold; 
+                background-color: #f0f0f0;
+            }
+            .section-title { 
+                text-align: center; 
+                font-weight: bold; 
+                font-size: 14px; 
+                margin-top: 25px; 
+                margin-bottom: 15px; 
+            }
+            .work-history {
+                margin-top: 15px;
+                padding-left: 20px;
+                padding-right: 20px;
+                line-height: 1.6;
+            }
         </style>';
 
+            // === FIRST PAGE ===
+
             // Title
-            $html .= "<h1>MA'LUMOTNOMA</h1>";
+            $html .= '<h1>МАЪЛУМОТНОМА</h1>';
 
-            // Subtitle
+            // Full Name Title
             $fullName = $pi ? trim($pi->familya . ' ' . $pi->ism . ' ' . $pi->sharif) : '';
-            $html .= '<div class="subtitle">' . htmlspecialchars($fullName) . ' haqida</div>';
+            $html .= '<div class="name-title">' . htmlspecialchars($fullName) . '</div>';
 
-            $html .= '<div class="content-wrapper">';
-            // Photo (3x4 cm = approximately 85x113 pixels at 72 DPI)
+            // Current Position (optional - based on document data)
+            if ($document->document_type === 'obyektivka' && $pi) {
+                $currentDate = date('Y', strtotime($workExperiences[0]->start_date)) . ' йил ' . date('d', strtotime($workExperiences[0]->start_date)) . ' ' . $this->getMonthName(date('n', strtotime($workExperiences[0]->start_date))) . 'дан:';
+                $html .= '<div class="current-position">';
+                $html .= $currentDate . '<br>';
+                $html .= '<strong>' . htmlspecialchars($workExperiences[0]->info) . '</strong>';
+                $html .= '</div>';
+            }
+
+            // Photo
             if ($pi && $pi->photo_path) {
                 $photoPath = storage_path('app/public/' . $pi->photo_path);
                 if (file_exists($photoPath)) {
-                    // Resize image to 3x4 cm (85x113 pixels)
                     $imageData = file_get_contents($photoPath);
                     $image = imagecreatefromstring($imageData);
 
                     if ($image !== false) {
-                        // Create new image with fixed size
-                        $newWidth = 85;
-                        $newHeight = 113;
+                        $newWidth = 100;
+                        $newHeight = 133;
                         $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
 
-                        // Resize
                         imagecopyresampled(
                             $resizedImage,
                             $image,
@@ -441,7 +653,6 @@ class DocumentController extends Controller
                             imagesy($image)
                         );
 
-                        // Convert to base64
                         ob_start();
                         imagejpeg($resizedImage, null, 90);
                         $resizedImageData = ob_get_clean();
@@ -450,87 +661,180 @@ class DocumentController extends Controller
                         imagedestroy($image);
                         imagedestroy($resizedImage);
 
-                        $html .= '<div class="photo-container"><img src="data:image/jpeg;base64,' . $base64Image . '" width="85" height="113" /></div>';
+                        $html .= '<div class="photo-container"><img src="data:image/jpeg;base64,' . $base64Image . '" /></div>';
                     }
                 }
             }
-            // Personal Information
+
+            // Personal Information Section
             if ($pi) {
-                $html .= '<div class="info-row">' . htmlspecialchars($fullName) . '</div>';
+                $html .= '<div class="info-section">';
 
-                $html .= '<table style="border: none; width: 100%; margin-top: 8px;"><tr>';
-                $html .= '<td style="border: none; width: 50%; padding: 0; vertical-align: top;">';
-                $html .= '<div class="info-row"><span class="info-label">Tug\'ilgan yili:</span></div>';
-                $html .= '<div class="info-row">' . date('d.m.Y', strtotime($pi->tugilgan_sana)) . '</div>';
-                $html .= '<div class="info-row"><span class="info-label">Millati:</span></div>';
-                $html .= '<div class="info-row">' . htmlspecialchars($pi->millati) . '</div>';
-                $html .= '<div class="info-row"><span class="info-label">Ma\'lumoti:</span></div>';
-                $html .= '<div class="info-row">' . htmlspecialchars($pi->malumoti) . '</div>';
+                // Two-column layout for birth info
+                $html .= '<table class="two-column" style="border: none;"><tr>';
+                $html .= '<td style="border: none;">';
+                $html .= '<div class="info-row">';
+                $html .= '<div class="info-label">Туғилган йили:</div>';
+                $html .= '<div class="info-value">' . date('d.m.Y', strtotime($pi->tugilgan_sana)) . '</div>';
+                $html .= '</div>';
                 $html .= '</td>';
+                $html .= '<td style="border: none;">';
+                $html .= '<div class="info-row">';
+                $html .= '<div class="info-label">Туғилган жойи:</div>';
+                $html .= '<div class="info-value">' . htmlspecialchars($pi->tugilgan_joyi) . '</div>';
+                $html .= '</div>';
+                $html .= '</td>';
+                $html .= '</tr></table>';
 
-                $html .= '<td style="border: none; width: 50%; padding: 0; padding-left: 20px; vertical-align: top;">';
-                $html .= '<div class="info-row"><span class="info-label">Tug\'ilgan joyi:</span></div>';
-                $html .= '<div class="info-row">' . htmlspecialchars($pi->tugilgan_joyi) . '</div>';
-                $html .= '<div class="info-row"><span class="info-label">Partiyaviyligi:</span></div>';
-                $html .= '<div class="info-row">' . ($pi->partiyaviyligi ? htmlspecialchars($pi->partiyaviyligi) : '-') . '</div>';
-                $html .= '<div class="info-row"><span class="info-label">Tamomlagan:</span></div>';
+                // Two-column layout for nationality and party
+                $html .= '<table class="two-column" style="border: none;"><tr>';
+                $html .= '<td style="border: none;">';
+                $html .= '<div class="info-row">';
+                $html .= '<div class="info-label">Миллати:</div>';
+                $html .= '<div class="info-value">' . htmlspecialchars($pi->millati) . '</div>';
+                $html .= '</div>';
+                $html .= '</td>';
+                $html .= '<td style="border: none;">';
+                $html .= '<div class="info-row">';
+                $html .= '<div class="info-label">Партиявийлиги:</div>';
+                $html .= '<div class="info-value">' . ($pi->partiyaviyligi ? htmlspecialchars($pi->partiyaviyligi) : 'йўқ') . '</div>';
+                $html .= '</div>';
+                $html .= '</td>';
+                $html .= '</tr></table>';
+
+                // Education information from education_records
                 if ($educationRecords && count($educationRecords) > 0) {
-                    $eduList = [];
-                    foreach ($educationRecords as $edu) {
-                        $eduList[] = htmlspecialchars($edu->description);
-                    }
-                    $html .= '<div class="info-row">' . implode(', ', $eduList) . '</div>';
+                    $firstEdu = $educationRecords[0];
+
+                    // Two-column layout for education
+                    $html .= '<table class="two-column" style="border: none;"><tr>';
+                    $html .= '<td style="border: none;">';
+                    $html .= '<div class="info-row">';
+                    $html .= '<div class="info-label">Маълумоти:</div>';
+                    $html .= '<div class="info-value">' . htmlspecialchars($firstEdu->malumoti) . '</div>';
+                    $html .= '</div>';
+                    $html .= '</td>';
+                    $html .= '<td style="border: none;">';
+                    $html .= '<div class="info-row">';
+                    $html .= '<div class="info-label">Тамомлаган:</div>';
+                    $html .= '<div class="info-value">' . ($firstEdu->tamomlagan ? htmlspecialchars($firstEdu->tamomlagan) : '-') . '</div>';
+                    $html .= '</div>';
+                    $html .= '</td>';
+                    $html .= '</tr></table>';
+
+                    // Specialty
+                    $html .= '<table class="two-column" style="border: none;"><tr>';
+                    $html .= '<td style="border: none;">';
+                    $html .= '<div class="info-row">';
+                    $html .= '<div class="info-label">Маълумоти бўйича мутахассислиги:</div>';
+                    $html .= '<div class="info-value">' . ($firstEdu->mutaxassisligi ? htmlspecialchars($firstEdu->mutaxassisligi) : '-') . '</div>';
+                    $html .= '</div>';
+                    $html .= '</td>';
+                    $html .= '</tr></table>';
+
+                    // Scientific degree and title
+                    $html .= '<table class="two-column" style="border: none;"><tr>';
+                    $html .= '<td style="border: none;">';
+                    $html .= '<div class="info-row">';
+                    $html .= '<div class="info-label">Илмий даражаси:</div>';
+                    $html .= '<div class="info-value">' . ($firstEdu->ilmiy_daraja ? htmlspecialchars($firstEdu->ilmiy_daraja) : 'йўқ') . '</div>';
+                    $html .= '</div>';
+                    $html .= '</td>';
+                    $html .= '<td style="border: none;">';
+                    $html .= '<div class="info-row">';
+                    $html .= '<div class="info-label">Илмий унвони:</div>';
+                    $html .= '<div class="info-value">' . ($firstEdu->ilmiy_unvoni ? htmlspecialchars($firstEdu->ilmiy_unvoni) : 'йўқ') . '</div>';
+                    $html .= '</div>';
+                    $html .= '</td>';
+                    $html .= '</tr></table>';
+
+                    // Languages and military rank
+                    $html .= '<table class="two-column" style="border: none;"><tr>';
+                    $html .= '<td style="border: none;">';
+                    $html .= '<div class="info-row">';
+                    $html .= '<div class="info-label">Қайси чет тилларини билади:</div>';
+                    $html .= '<div class="info-value">' . ($firstEdu->chet_tillari ? htmlspecialchars($firstEdu->chet_tillari) : '-') . '</div>';
+                    $html .= '</div>';
+                    $html .= '</td>';
+                    $html .= '<td style="border: none;">';
+                    $html .= '<div class="info-row">';
+                    $html .= '<div class="info-label">Ҳарбий (махсус) унвони:</div>';
+                    $html .= '<div class="info-value"> ' . ($firstEdu->maxsus_unvoni ? htmlspecialchars($firstEdu->maxsus_unvoni) : 'йўқ') . '</div>';
+                    $html .= '</div>';
+                    $html .= '</td>';
+                    $html .= '</tr></table>';
+
+                    // State awards
+                    $html .= '<div class="info-row">';
+                    $html .= '<div class="info-label">Давлат мукофотлари билан тақдирланганми (қанақа):</div>';
+                    $html .= '<div class="info-value">' . ($firstEdu->davlat_mukofoti ? htmlspecialchars($firstEdu->davlat_mukofoti) : 'йўқ') . '</div>';
+                    $html .= '</div>';
                 } else {
-                    $html .= '<div class="info-row">-</div>';
+                    // Fallback if no education records
+                    $html .= '<table class="two-column" style="border: none;"><tr>';
+                    $html .= '<td style="border: none;">';
+                    $html .= '<div class="info-row">';
+                    $html .= '<div class="info-label">Маълумоти:</div>';
+                    $html .= '<div class="info-value">-</div>';
+                    $html .= '</div>';
+                    $html .= '</td>';
+                    $html .= '<td style="border: none;">';
+                    $html .= '<div class="info-row">';
+                    $html .= '<div class="info-label">Тамомлаган:</div>';
+                    $html .= '<div class="info-value">-</div>';
+                    $html .= '</div>';
+                    $html .= '</td>';
+                    $html .= '</tr></table>';
                 }
-                $html .= '</td>';
-                $html .= '</tr></table>';
 
-                $html .= '<div class="clear"></div>';
+                // Deputy status
+                $html .= '<div class="info-row">';
+                $html .= '<div class="info-label">Халқ депутатлари, республика, вилоят, шаҳар ва туман Кенгаши депутатими ёки бошқа сайланадиган органларнинг аъзосими (тўлиқ кўрсатилиши лозим):</div>';
+                $html .= '<div class="info-value">' . ($pi->xalq_deputatlari ? htmlspecialchars($pi->xalq_deputatlari) : 'йўқ') . '</div>';
+                $html .= '</div>';
 
-                $html .= '<div class="info-row" style="margin-top: 6px;"><span class="info-label">Ma\'lumoti bo\'yicha mutaxassisligi:</span></div>';
-                $html .= '<div class="info-row">' . ($pi->malumoti_boyicha_mutaxassisligi ? htmlspecialchars($pi->malumoti_boyicha_mutaxassisligi) : '-') . '</div>';
-
-                $html .= '<table style="border: none; width: 100%; margin-top: 6px;"><tr>';
-                $html .= '<td style="border: none; width: 50%; padding: 0; vertical-align: top;">';
-                $html .= '<div class="info-row"><span class="info-label">Ilmiy darajasi:</span></div>';
-                $html .= '<div class="info-row">yo\'q</div>';
-                $html .= '</td>';
-                $html .= '<td style="border: none; width: 50%; padding: 0; padding-left: 20px; vertical-align: top;">';
-                $html .= '<div class="info-row"><span class="info-label">Ilmiy unvoni:</span></div>';
-                $html .= '<div class="info-row">yo\'q</div>';
-                $html .= '</td>';
-                $html .= '</tr></table>';
-
-                $html .= '<div class="info-row" style="margin-top: 6px;"><span class="info-label">Qaysi chet tillarini biladi:</span></div>';
-                $html .= '<div class="info-row">' . ($pi->qaysi_chet_tillarini_biladi ? htmlspecialchars($pi->qaysi_chet_tillarini_biladi) : '-') . '</div>';
-
-                $html .= '<div class="info-row" style="margin-top: 6px;"><span class="info-label">Davlat mukofoti bilan taqdirlanganmi:</span></div>';
-                $html .= '<div class="info-row">yo\'q</div>';
-
-                $html .= '<div class="info-row" style="margin-top: 6px;"><span class="info-label">Xalq deputatlari respublika, viloyat, shahar va tuman Kengashi deputatimi yoki boshqa saylanadigan organlarning a\'zosimi:</span></div>';
-                $html .= '<div class="info-row">' . ($pi->xalq_deputatlari ? htmlspecialchars($pi->xalq_deputatlari) : '-') . '</div>';
+                $html .= '</div>';  // end info-section
             }
+
+            // Work History Section
+            $html .= '<div class="section-title">МЕҲНАТ ФАОЛИЯТИ</div>';
+            $html .= '<div class="work-history">';
+
+            if ($workExperiences && count($workExperiences) > 0) {
+                foreach ($workExperiences as $workExp) {
+                    $startYear = date('Y', strtotime($workExp->start_date));
+
+                    if ($workExp->end_date) {
+                        $endYear = date('Y', strtotime($workExp->end_date));
+                        $dateRange = $startYear . '-' . $endYear . ' йй.';
+                    } else {
+                        $dateRange = $startYear . ' й. ҳ.в.';
+                    }
+
+                    $html .= '<div style="margin-bottom: 8px; line-height: 1.6;">';
+                    $html .= '<p>' . htmlspecialchars($dateRange) . '</p> - ' . htmlspecialchars($workExp->info);
+                    $html .= '</div>';
+                }
+            } else {
+                $html .= '<div style="margin-bottom: 8px;">Мавжуд эмас</div>';
+            }
+
             $html .= '</div>';
 
-            // Work Activity Section
-            $html .= '<div class="section"><h2>MEHNAT FAOLIYATI</h2>';
-            // $html .= '<div style="text-align: center;">-</div></div>';
-
-            // Page break before relatives
+            // === SECOND PAGE (Relatives) ===
             if ($relatives && count($relatives) > 0) {
-                // $html .= '<pagebreak />';
+                $html .= '<pagebreak />';
 
-                $html .= '<div style="margin-top: 20px;">';
-                $html .= '<div class="subtitle">' . htmlspecialchars($fullName) . ' haqida</div>';
-                $html .= "<h2>MA'LUMOT</h2>";
-                $html .= '<table>';
+                $html .= '<div class="name-title" style="margin-top: 20px;">' . htmlspecialchars($fullName) . ' яқин қариндошлари хақида</div>';
+                $html .= '<h2>МАЪЛУМОТ</h2>';
+
+                $html .= '<table class="relatives-table">';
                 $html .= '<thead><tr>';
-                $html .= '<th>Qarin doshligi</th>';
-                $html .= '<th>Familyasi, ismi va otasining ismi</th>';
-                $html .= "<th>Tug'ilgan yili va joyi</th>";
-                $html .= '<th>Ish joyi va lavozimi</th>';
-                $html .= '<th>Turar joyi</th>';
+                $html .= '<th style="width: 12%;">Қарин-дошлиги</th>';
+                $html .= '<th style="width: 22%;">Фамилияси, исми ва отасининг исми</th>';
+                $html .= '<th style="width: 18%;">Туғилган йили ва жойи</th>';
+                $html .= '<th style="width: 25%;">Иш жойи ва лавозими</th>';
+                $html .= '<th style="width: 23%;">Турар жойи</th>';
                 $html .= '</tr></thead><tbody>';
 
                 foreach ($relatives as $relative) {
@@ -539,28 +843,50 @@ class DocumentController extends Controller
                     $html .= '<td>' . htmlspecialchars($relative->fio) . '</td>';
                     $html .= '<td>' . htmlspecialchars($relative->tugilgan);
                     if ($relative->vafot_etgan) {
-                        $html .= ' (vafot etgan)';
+                        $html .= '<br>(вафот этган';
+                        if ($relative->vafot_etgan_yili) {
+                            $html .= ', ' . htmlspecialchars($relative->vafot_etgan_yili) . ' йил';
+                        }
+                        $html .= ')';
                     }
                     $html .= '</td>';
-                    $html .= '<td>' . htmlspecialchars($relative->ish_joyi) . '</td>';
-                    $html .= '<td>' . htmlspecialchars($relative->turar_joyi) . '</td>';
+                    if ($relative->vafot_etgan) {
+                        $html .= '<td>' . ($relative->kasbi ? htmlspecialchars($relative->kasbi) : '-') . '</td>';
+                        $html .= '<td>-</td>';
+                    } else {
+                        $html .= '<td>' . ($relative->ish_joyi ? htmlspecialchars($relative->ish_joyi) : '-') . '</td>';
+                        $html .= '<td>' . ($relative->turar_joyi ? htmlspecialchars($relative->turar_joyi) : '-') . '</td>';
+                    }
                     $html .= '</tr>';
                 }
 
-                $html .= '</tbody></table></div>';
+                $html .= '</tbody></table>';
             }
 
             $html .= '</body></html>';
 
-            // Write HTML to PDF
-            $mpdf->WriteHTML($html);
-
             // Generate filename
-            $filename = $documentTypeLabel . '_' . ($pi ? $pi->familya . '_' . $pi->ism : 'document') . '_' . date('Y-m-d') . '.pdf';
+            $filename = 'Malumоtnoma_' . ($pi ? $pi->familya . '_' . $pi->ism : 'document') . '_' . date('Y-m-d') . '.pdf';
             $filename = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $filename);
 
-            // Get PDF content as string
-            $pdfContent = $mpdf->Output($filename, 'S');
+            // Generate PDF using Browsershot
+            // Set node_modules path so Browsershot can find puppeteer
+            $nodeModulesPath = base_path('node_modules');
+            $nodeBinary = trim(shell_exec('which node') ?: '/usr/bin/node');
+            $npmBinary = trim(shell_exec('which npm') ?: '/usr/bin/npm');
+
+            // Set NODE_PATH in environment
+            putenv('NODE_PATH=' . $nodeModulesPath);
+
+            $pdfContent = Browsershot::html($html)
+                ->setNodeModulePath($nodeModulesPath)
+                ->setNodeBinary($nodeBinary)
+                ->setNpmBinary($npmBinary)
+                ->setIncludePath(getenv('PATH') . ':' . dirname($nodeBinary))
+                ->paperSize(210, 297, 'mm')  // A4 size
+                ->margins(15, 15, 20, 20, 'mm')  // top, right, bottom, left
+                ->showBackground()
+                ->pdf();
 
             // Output PDF
             return response($pdfContent, 200)
@@ -573,5 +899,25 @@ class DocumentController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    // Helper method for month names in Uzbek
+    private function getMonthName($month)
+    {
+        $months = [
+            1 => 'январ',
+            2 => 'феврал',
+            3 => 'март',
+            4 => 'апрел',
+            5 => 'май',
+            6 => 'июн',
+            7 => 'июл',
+            8 => 'август',
+            9 => 'сентябр',
+            10 => 'октябр',
+            11 => 'ноябр',
+            12 => 'декабр',
+        ];
+        return $months[$month] ?? '';
     }
 }

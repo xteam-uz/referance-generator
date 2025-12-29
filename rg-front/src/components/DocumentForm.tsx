@@ -31,16 +31,21 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
             sharif: '',
             joriy_lavozim_sanasi: '',
             joriy_lavozim_toliq: '',
-            tugilgan_sana: '',
+            tugilgan_sana: new Date(),
             tugilgan_joyi: '',
             millati: '',
             partiyaviyligi: '',
-            malumoti: 'Oliy',
-            malumoti_boyicha_mutaxassisligi: '',
-            qaysi_chet_tillarini_biladi: '',
             xalq_deputatlari: '',
         },
-        education_records: [{ description: '' }],
+        education_records: [{
+            malumoti: 'Oliy',
+            tamomlagan: '',
+            mutaxassisligi: '',
+            ilmiy_daraja: '',
+            ilmiy_unvoni: '',
+            chet_tillari: '',
+            davlat_mukofoti: '',
+        }],
         relatives: [{
             qarindoshligi: 'Otasi',
             fio: '',
@@ -48,6 +53,8 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
             vafot_etgan: false,
             ish_joyi: '',
             turar_joyi: '',
+            vafot_etgan_yili: '',
+            kasbi: '',
         }],
     });
 
@@ -64,25 +71,38 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                         sharif: pi.sharif,
                         joriy_lavozim_sanasi: pi.joriy_lavozim_sanasi,
                         joriy_lavozim_toliq: pi.joriy_lavozim_toliq,
-                        tugilgan_sana: pi.tugilgan_sana,
+                        tugilgan_sana: new Date(pi.tugilgan_sana),
                         tugilgan_joyi: pi.tugilgan_joyi,
                         millati: pi.millati,
                         partiyaviyligi: pi.partiyaviyligi || '',
-                        malumoti: pi.malumoti,
-                        malumoti_boyicha_mutaxassisligi: pi.malumoti_boyicha_mutaxassisligi || '',
-                        qaysi_chet_tillarini_biladi: pi.qaysi_chet_tillarini_biladi || '',
                         xalq_deputatlari: pi.xalq_deputatlari || '',
                     },
                     education_records: existingDocument.education_records?.map(er => ({
-                        description: er.description,
-                    })) || [{ description: '' }],
+                        malumoti: er.malumoti,
+                        tamomlagan: er.tamomlagan || '',
+                        mutaxassisligi: er.mutaxassisligi || '',
+                        ilmiy_daraja: er.ilmiy_daraja || '',
+                        ilmiy_unvoni: er.ilmiy_unvoni || '',
+                        chet_tillari: er.chet_tillari || '',
+                        davlat_mukofoti: er.davlat_mukofoti || '',
+                    })) || [{
+                        malumoti: 'Oliy',
+                        tamomlagan: '',
+                        mutaxassisligi: '',
+                        ilmiy_daraja: '',
+                        ilmiy_unvoni: '',
+                        chet_tillari: '',
+                        davlat_mukofoti: '',
+                    }],
                     relatives: existingDocument.relatives?.map(r => ({
                         qarindoshligi: r.qarindoshligi,
                         fio: r.fio,
                         tugilgan: r.tugilgan,
                         vafot_etgan: r.vafot_etgan,
-                        ish_joyi: r.ish_joyi,
-                        turar_joyi: r.turar_joyi,
+                        ish_joyi: r.ish_joyi || '',
+                        turar_joyi: r.turar_joyi || '',
+                        vafot_etgan_yili: r.vafot_etgan_yili || '',
+                        kasbi: r.kasbi || '',
                     })) || [{
                         qarindoshligi: 'Otasi',
                         fio: '',
@@ -90,6 +110,8 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                         vafot_etgan: false,
                         ish_joyi: '',
                         turar_joyi: '',
+                        vafot_etgan_yili: '',
+                        kasbi: '',
                     }],
                 });
 
@@ -115,7 +137,15 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
     const addEducationRecord = () => {
         setFormData({
             ...formData,
-            education_records: [...formData.education_records, { description: '' }],
+            education_records: [...formData.education_records, {
+                malumoti: 'Oliy',
+                tamomlagan: '',
+                mutaxassisligi: '',
+                ilmiy_daraja: '',
+                ilmiy_unvoni: '',
+                chet_tillari: '',
+                davlat_mukofoti: '',
+            }],
         });
     };
 
@@ -180,16 +210,21 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                         sharif: '',
                         joriy_lavozim_sanasi: '',
                         joriy_lavozim_toliq: '',
-                        tugilgan_sana: '',
+                        tugilgan_sana: new Date(),
                         tugilgan_joyi: '',
                         millati: '',
                         partiyaviyligi: '',
-                        malumoti: 'Oliy',
-                        malumoti_boyicha_mutaxassisligi: '',
-                        qaysi_chet_tillarini_biladi: '',
                         xalq_deputatlari: '',
                     },
-                    education_records: [{ description: '' }],
+                    education_records: [{
+                        malumoti: 'Oliy',
+                        tamomlagan: '',
+                        mutaxassisligi: '',
+                        ilmiy_daraja: '',
+                        ilmiy_unvoni: '',
+                        chet_tillari: '',
+                        davlat_mukofoti: '',
+                    }],
                     relatives: [{
                         qarindoshligi: 'Otasi',
                         fio: '',
@@ -350,10 +385,10 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                         required
                         className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         id="Tugilgansana"
-                        value={formData.personal_information.tugilgan_sana}
+                        value={formData.personal_information.tugilgan_sana.toISOString().split('T')[0]}
                         onChange={(e) => setFormData({
                             ...formData,
-                            personal_information: { ...formData.personal_information, tugilgan_sana: e.target.value }
+                            personal_information: { ...formData.personal_information, tugilgan_sana: new Date(e.target.value as string) }
                         })}
                     />
                     <small className="text-gray-500 text-sm">Format: oy/kun/yil</small>
@@ -397,25 +432,6 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                         />
                     </div>
 
-                    <div className="flex-1 mb-4 md:mb-4">
-                        <label htmlFor="Malumoti" className="block mb-2">
-                            Ma'lumoti <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            id="Malumoti"
-                            required
-                            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={formData.personal_information.malumoti}
-                            onChange={(e) => setFormData({
-                                ...formData,
-                                personal_information: { ...formData.personal_information, malumoti: e.target.value as EducationLevel }
-                            })}
-                        >
-                            <option value="Oliy">Oliy</option>
-                            <option value="O'rta maxsus">O'rta maxsus</option>
-                            <option value="O'rta">O'rta</option>
-                        </select>
-                    </div>
                 </div>
 
                 {/* Partiyaviyligi */}
@@ -436,80 +452,144 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                     />
                 </div>
 
-                {/* Tamomlagan */}
+                {/* Ma'lumoti va Ta'lim */}
                 <div className="mb-4">
-                    <label className="block mb-2">Tamomlagan</label>
+                    <label className="block mb-2">Ma'lumoti va Ta'lim</label>
 
                     {formData.education_records.map((record, index) => (
-                        <div key={index} className="mb-2 flex gap-2 items-center">
-                            <input
-                                type="text"
-                                required
-                                placeholder="Misol: 1997 yil ..."
-                                className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                value={record.description}
-                                onChange={(e) => {
-                                    const newRecords = [...formData.education_records];
-                                    newRecords[index].description = e.target.value;
-                                    setFormData({ ...formData, education_records: newRecords });
-                                }}
-                            />
-                            {index > 0 && (
-                                <button
-                                    type="button"
-                                    className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none"
-                                    aria-label="Remove"
-                                    onClick={() => removeEducationRecord(index)}
+                        <div key={index} className="mb-4 p-4 border border-gray-300 rounded">
+                            <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold">Ta'lim #{index + 1}</h4>
+                                {index > 0 && (
+                                    <button
+                                        type="button"
+                                        className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none"
+                                        aria-label="Remove"
+                                        onClick={() => removeEducationRecord(index)}
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="mb-2">
+                                <label className="block mb-1 text-sm">Ma'lumoti <span className="text-red-500">*</span></label>
+                                <select
+                                    required
+                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={record.malumoti}
+                                    onChange={(e) => {
+                                        const newRecords = [...formData.education_records];
+                                        newRecords[index].malumoti = e.target.value as EducationLevel;
+                                        setFormData({ ...formData, education_records: newRecords });
+                                    }}
                                 >
-                                    ✕
-                                </button>
-                            )}
+                                    <option value="Oliy">Oliy</option>
+                                    <option value="O'rta maxsus">O'rta maxsus</option>
+                                    <option value="O'rta">O'rta</option>
+                                </select>
+                            </div>
+
+                            <div className="mb-2">
+                                <label className="block mb-1 text-sm">Tamomlagan</label>
+                                <input
+                                    type="text"
+                                    placeholder="Misol: 2022-yil O'zbekiston Milliy Universiteti"
+                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={record.tamomlagan || ''}
+                                    onChange={(e) => {
+                                        const newRecords = [...formData.education_records];
+                                        newRecords[index].tamomlagan = e.target.value;
+                                        setFormData({ ...formData, education_records: newRecords });
+                                    }}
+                                />
+                            </div>
+
+                            <div className="mb-2">
+                                <label className="block mb-1 text-sm">Mutaxassisligi</label>
+                                <input
+                                    type="text"
+                                    placeholder="Misol: Falsafa"
+                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={record.mutaxassisligi || ''}
+                                    onChange={(e) => {
+                                        const newRecords = [...formData.education_records];
+                                        newRecords[index].mutaxassisligi = e.target.value;
+                                        setFormData({ ...formData, education_records: newRecords });
+                                    }}
+                                />
+                            </div>
+
+                            <div className="mb-2">
+                                <label className="block mb-1 text-sm">Ilmiy daraja</label>
+                                <input
+                                    type="text"
+                                    placeholder="Misol: Falsafa fanlari nomzodi (2003)"
+                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={record.ilmiy_daraja || ''}
+                                    onChange={(e) => {
+                                        const newRecords = [...formData.education_records];
+                                        newRecords[index].ilmiy_daraja = e.target.value;
+                                        setFormData({ ...formData, education_records: newRecords });
+                                    }}
+                                />
+                            </div>
+
+                            <div className="mb-2">
+                                <label className="block mb-1 text-sm">Ilmiy unvoni</label>
+                                <input
+                                    type="text"
+                                    placeholder="Misol: Dotsent (2005)"
+                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={record.ilmiy_unvoni || ''}
+                                    onChange={(e) => {
+                                        const newRecords = [...formData.education_records];
+                                        newRecords[index].ilmiy_unvoni = e.target.value;
+                                        setFormData({ ...formData, education_records: newRecords });
+                                    }}
+                                />
+                            </div>
+
+                            <div className="mb-2">
+                                <label className="block mb-1 text-sm">Chet tillari</label>
+                                <input
+                                    type="text"
+                                    placeholder="Misol: ingliz, rus, o'zbek"
+                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={record.chet_tillari || ''}
+                                    onChange={(e) => {
+                                        const newRecords = [...formData.education_records];
+                                        newRecords[index].chet_tillari = e.target.value;
+                                        setFormData({ ...formData, education_records: newRecords });
+                                    }}
+                                />
+                            </div>
+
+                            <div className="mb-2">
+                                <label className="block mb-1 text-sm">Davlat mukofoti</label>
+                                <input
+                                    type="text"
+                                    placeholder="Misol: Mustaqillik ordeni (2011)"
+                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={record.davlat_mukofoti || ''}
+                                    onChange={(e) => {
+                                        const newRecords = [...formData.education_records];
+                                        newRecords[index].davlat_mukofoti = e.target.value;
+                                        setFormData({ ...formData, education_records: newRecords });
+                                    }}
+                                />
+                            </div>
                         </div>
                     ))}
                     <button
                         type="button"
-                        className="w-full px-3 py-2 mt-2 border border-gray-300 rounded bg-white hover:bg-gray-100 text-sm"
+                        className="w-full px-3 py-2 mt-2 border border-gray-300 rounded bg-white hover:bg-gray-400 text-sm text-gray-500 hover:text-white"
                         onClick={addEducationRecord}
                     >
-                        Maydon qo'shish
+                        Ta'lim qo'shish
                     </button>
                 </div>
 
-                {/* Ma'lumoti bo'yicha mutaxassisligi */}
-                <div className="mb-4">
-                    <label htmlFor="MalumotiBoyichaMutaxassisligi" className="block mb-2">
-                        Ma'lumoti bo'yicha mutaxassisligi
-                    </label>
-                    <input
-                        type="text"
-                        id="MalumotiBoyichaMutaxassisligi"
-                        placeholder="Misol: Matematika"
-                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.personal_information.malumoti_boyicha_mutaxassisligi || ''}
-                        onChange={(e) => setFormData({
-                            ...formData,
-                            personal_information: { ...formData.personal_information, malumoti_boyicha_mutaxassisligi: e.target.value }
-                        })}
-                    />
-                </div>
-
-                {/* Qaysi chet tillarini biladi */}
-                <div className="mb-4">
-                    <label htmlFor="QaysiChetTillariniBiladi" className="block mb-2">
-                        Qaysi chet tillarini biladi
-                    </label>
-                    <input
-                        type="text"
-                        id="QaysiChetTillariniBiladi"
-                        placeholder="Misol: Ingliz tili, Rus tili"
-                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.personal_information.qaysi_chet_tillarini_biladi || ''}
-                        onChange={(e) => setFormData({
-                            ...formData,
-                            personal_information: { ...formData.personal_information, qaysi_chet_tillarini_biladi: e.target.value }
-                        })}
-                    />
-                </div>
 
                 {/* Xalq deputatlari */}
                 <div className="mb-4">
@@ -601,45 +681,102 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                                     onChange={(e) => {
                                         const newRelatives = [...formData.relatives];
                                         newRelatives[index].vafot_etgan = e.target.checked;
+                                        // Agar vafot_etgan false bo'lsa, vafot_etgan_yili va kasbi ni tozalash
+                                        if (!e.target.checked) {
+                                            newRelatives[index].vafot_etgan_yili = '';
+                                            newRelatives[index].kasbi = '';
+                                        } else {
+                                            // Agar vafot_etgan true bo'lsa, ish_joyi va turar_joyi ni tozalash
+                                            newRelatives[index].ish_joyi = '';
+                                            newRelatives[index].turar_joyi = '';
+                                        }
                                         setFormData({ ...formData, relatives: newRelatives });
                                     }}
                                 />
                                 <span>Vafot etgan</span>
                             </label>
 
-                            <label htmlFor={`Ishjoyi-${index}`} className="block mb-2">
-                                Ish joyi va lavozimi <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id={`Ishjoyi-${index}`}
-                                type="text"
-                                required
-                                placeholder="Misol: Pensiyada (Toshkent davla"
-                                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                value={relative.ish_joyi}
-                                onChange={(e) => {
-                                    const newRelatives = [...formData.relatives];
-                                    newRelatives[index].ish_joyi = e.target.value;
-                                    setFormData({ ...formData, relatives: newRelatives });
-                                }}
-                            />
+                            {relative.vafot_etgan ? (
+                                <>
+                                    <label htmlFor={`VafotEtganYili-${index}`} className="block mb-2">
+                                        Vafot etgan yili <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        id={`VafotEtganYili-${index}`}
+                                        required
+                                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={relative.vafot_etgan_yili || ''}
+                                        onChange={(e) => {
+                                            const newRelatives = [...formData.relatives];
+                                            newRelatives[index].vafot_etgan_yili = e.target.value;
+                                            setFormData({ ...formData, relatives: newRelatives });
+                                        }}
+                                    >
+                                        <option value="">Yilni tanlang</option>
+                                        {Array.from({ length: new Date().getFullYear() - 1900 + 1 }, (_, i) => {
+                                            const year = 1900 + i;
+                                            return (
+                                                <option key={year} value={year.toString()}>
+                                                    {year}
+                                                </option>
+                                            );
+                                        }).reverse()}
+                                    </select>
 
-                            <label htmlFor={`Turarjoyi-${index}`} className="mt-3 block mb-2">
-                                Turar joyi <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id={`Turarjoyi-${index}`}
-                                type="text"
-                                required
-                                placeholder="Misol: Toshkent shahri, Mirzo Ul"
-                                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                value={relative.turar_joyi}
-                                onChange={(e) => {
-                                    const newRelatives = [...formData.relatives];
-                                    newRelatives[index].turar_joyi = e.target.value;
-                                    setFormData({ ...formData, relatives: newRelatives });
-                                }}
-                            />
+                                    <label htmlFor={`Kasbi-${index}`} className="mt-3 block mb-2">
+                                        Kasbi <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        id={`Kasbi-${index}`}
+                                        type="text"
+                                        required
+                                        placeholder="Misol: maktab o'qituvchisi"
+                                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={relative.kasbi || ''}
+                                        onChange={(e) => {
+                                            const newRelatives = [...formData.relatives];
+                                            newRelatives[index].kasbi = e.target.value;
+                                            setFormData({ ...formData, relatives: newRelatives });
+                                        }}
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <label htmlFor={`Ishjoyi-${index}`} className="block mb-2">
+                                        Ish joyi va lavozimi <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        id={`Ishjoyi-${index}`}
+                                        type="text"
+                                        required
+                                        placeholder="Misol: Pensiyada (Toshkent davla"
+                                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={relative.ish_joyi || ''}
+                                        onChange={(e) => {
+                                            const newRelatives = [...formData.relatives];
+                                            newRelatives[index].ish_joyi = e.target.value;
+                                            setFormData({ ...formData, relatives: newRelatives });
+                                        }}
+                                    />
+
+                                    <label htmlFor={`Turarjoyi-${index}`} className="mt-3 block mb-2">
+                                        Turar joyi <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        id={`Turarjoyi-${index}`}
+                                        type="text"
+                                        required
+                                        placeholder="Misol: Toshkent shahri, Mirzo Ul"
+                                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={relative.turar_joyi || ''}
+                                        onChange={(e) => {
+                                            const newRelatives = [...formData.relatives];
+                                            newRelatives[index].turar_joyi = e.target.value;
+                                            setFormData({ ...formData, relatives: newRelatives });
+                                        }}
+                                    />
+                                </>
+                            )}
 
                             {formData.relatives.length > 1 && (
                                 <button
@@ -656,7 +793,7 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                 <button
                     type="button"
                     onClick={addRelative}
-                    className="w-full px-3 py-2 mt-2 border border-gray-300 rounded bg-white hover:bg-gray-100 text-sm"
+                    className="w-full px-3 py-2 my-2 border border-gray-300 rounded bg-white hover:bg-gray-100 text-sm"
                 >
                     Qarindosh qo'shish
                 </button>

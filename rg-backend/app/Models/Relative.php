@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Relative extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'document_id',
         'qarindoshligi',
@@ -17,6 +18,8 @@ class Relative extends Model
         'vafot_etgan',
         'ish_joyi',
         'turar_joyi',
+        'vafot_etgan_yili',
+        'kasbi',
         'order_index',
     ];
 
@@ -27,6 +30,7 @@ class Relative extends Model
 
     /**
      * Get the document that owns the relative.
+     * @return Illuminate\Database\Eloquent\Relations\BelongsTo;
      */
     public function document(): BelongsTo
     {

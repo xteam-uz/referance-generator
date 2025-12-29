@@ -61,14 +61,33 @@ export function useCreateDocument() {
             formData.append('personal_information[sharif]', data.personal_information.sharif);
             formData.append('personal_information[joriy_lavozim_sanasi]', data.personal_information.joriy_lavozim_sanasi);
             formData.append('personal_information[joriy_lavozim_toliq]', data.personal_information.joriy_lavozim_toliq);
-            formData.append('personal_information[tugilgan_sana]', data.personal_information.tugilgan_sana);
+            formData.append('personal_information[tugilgan_sana]', data.personal_information.tugilgan_sana.toISOString().split('T')[0]);
             formData.append('personal_information[tugilgan_joyi]', data.personal_information.tugilgan_joyi);
             formData.append('personal_information[millati]', data.personal_information.millati);
-            formData.append('personal_information[malumoti]', data.personal_information.malumoti);
+            formData.append('personal_information[partiyaviyligi]', data.personal_information.partiyaviyligi || '');
+            formData.append('personal_information[xalq_deputatlari]', data.personal_information.xalq_deputatlari || '');
 
             // Education records
             data.education_records.forEach((record, index) => {
-                formData.append(`education_records[${index}][description]`, record.description);
+                formData.append(`education_records[${index}][malumoti]`, record.malumoti);
+                if (record.tamomlagan) {
+                    formData.append(`education_records[${index}][tamomlagan]`, record.tamomlagan);
+                }
+                if (record.mutaxassisligi) {
+                    formData.append(`education_records[${index}][mutaxassisligi]`, record.mutaxassisligi);
+                }
+                if (record.ilmiy_daraja) {
+                    formData.append(`education_records[${index}][ilmiy_daraja]`, record.ilmiy_daraja);
+                }
+                if (record.ilmiy_unvoni) {
+                    formData.append(`education_records[${index}][ilmiy_unvoni]`, record.ilmiy_unvoni);
+                }
+                if (record.chet_tillari) {
+                    formData.append(`education_records[${index}][chet_tillari]`, record.chet_tillari);
+                }
+                if (record.davlat_mukofoti) {
+                    formData.append(`education_records[${index}][davlat_mukofoti]`, record.davlat_mukofoti);
+                }
             });
 
             // Relatives
@@ -77,8 +96,14 @@ export function useCreateDocument() {
                 formData.append(`relatives[${index}][fio]`, relative.fio);
                 formData.append(`relatives[${index}][tugilgan]`, relative.tugilgan);
                 formData.append(`relatives[${index}][vafot_etgan]`, relative.vafot_etgan ? '1' : '0');
-                formData.append(`relatives[${index}][ish_joyi]`, relative.ish_joyi);
-                formData.append(`relatives[${index}][turar_joyi]`, relative.turar_joyi);
+
+                if (relative.vafot_etgan) {
+                    formData.append(`relatives[${index}][vafot_etgan_yili]`, relative.vafot_etgan_yili ?? '');
+                    formData.append(`relatives[${index}][kasbi]`, relative.kasbi ?? '');
+                } else {
+                    formData.append(`relatives[${index}][ish_joyi]`, relative.ish_joyi ?? '');
+                    formData.append(`relatives[${index}][turar_joyi]`, relative.turar_joyi ?? '');
+                }
             });
 
             const response = await apiClient.post<ApiResponse<Document>>('/documents', formData, {
@@ -133,7 +158,25 @@ export function useUpdateDocument() {
             // Education records
             if (data.education_records) {
                 data.education_records.forEach((record, index) => {
-                    formData.append(`education_records[${index}][description]`, record.description);
+                    formData.append(`education_records[${index}][malumoti]`, record.malumoti);
+                    if (record.tamomlagan) {
+                        formData.append(`education_records[${index}][tamomlagan]`, record.tamomlagan);
+                    }
+                    if (record.mutaxassisligi) {
+                        formData.append(`education_records[${index}][mutaxassisligi]`, record.mutaxassisligi);
+                    }
+                    if (record.ilmiy_daraja) {
+                        formData.append(`education_records[${index}][ilmiy_daraja]`, record.ilmiy_daraja);
+                    }
+                    if (record.ilmiy_unvoni) {
+                        formData.append(`education_records[${index}][ilmiy_unvoni]`, record.ilmiy_unvoni);
+                    }
+                    if (record.chet_tillari) {
+                        formData.append(`education_records[${index}][chet_tillari]`, record.chet_tillari);
+                    }
+                    if (record.davlat_mukofoti) {
+                        formData.append(`education_records[${index}][davlat_mukofoti]`, record.davlat_mukofoti);
+                    }
                 });
             }
 
@@ -144,8 +187,14 @@ export function useUpdateDocument() {
                     formData.append(`relatives[${index}][fio]`, relative.fio);
                     formData.append(`relatives[${index}][tugilgan]`, relative.tugilgan);
                     formData.append(`relatives[${index}][vafot_etgan]`, relative.vafot_etgan ? '1' : '0');
-                    formData.append(`relatives[${index}][ish_joyi]`, relative.ish_joyi);
-                    formData.append(`relatives[${index}][turar_joyi]`, relative.turar_joyi);
+
+                    if (relative.vafot_etgan) {
+                        formData.append(`relatives[${index}][vafot_etgan_yili]`, relative.vafot_etgan_yili ?? '');
+                        formData.append(`relatives[${index}][kasbi]`, relative.kasbi ?? '');
+                    } else {
+                        formData.append(`relatives[${index}][ish_joyi]`, relative.ish_joyi ?? '');
+                        formData.append(`relatives[${index}][turar_joyi]`, relative.turar_joyi ?? '');
+                    }
                 });
             }
 

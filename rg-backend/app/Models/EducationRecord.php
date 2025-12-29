@@ -12,7 +12,14 @@ class EducationRecord extends Model
 
     protected $fillable = [
         'document_id',
-        'description',
+        'malumoti',
+        'tamomlagan',
+        'mutaxassisligi',
+        'ilmiy_daraja',
+        'ilmiy_unvoni',
+        'chet_tillari',
+        'maxsus_unvoni',
+        'davlat_mukofoti',
         'order_index',
     ];
 
@@ -22,6 +29,7 @@ class EducationRecord extends Model
 
     /**
      * Get the document that owns the education record.
+     * @return Illuminate\Database\Eloquent\Relations\BelongsTo;
      */
     public function document(): BelongsTo
     {

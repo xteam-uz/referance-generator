@@ -42,9 +42,6 @@ export interface PersonalInformation {
     tugilgan_joyi: string;
     millati: string;
     partiyaviyligi: string | null;
-    malumoti: EducationLevel;
-    malumoti_boyicha_mutaxassisligi: string | null;
-    qaysi_chet_tillarini_biladi: string | null;
     xalq_deputatlari: string | null;
     created_at: string;
     updated_at: string;
@@ -53,7 +50,13 @@ export interface PersonalInformation {
 export interface EducationRecord {
     id: number;
     document_id: number;
-    description: string;
+    malumoti: EducationLevel;
+    tamomlagan: string | null;
+    mutaxassisligi: string | null;
+    ilmiy_daraja: string | null;
+    ilmiy_unvoni: string | null;
+    chet_tillari: string | null;
+    davlat_mukofoti: string | null;
     order_index: number;
     created_at: string;
     updated_at: string;
@@ -66,8 +69,10 @@ export interface Relative {
     fio: string;
     tugilgan: string;
     vafot_etgan: boolean;
-    ish_joyi: string;
-    turar_joyi: string;
+    ish_joyi: string | null;
+    turar_joyi: string | null;
+    vafot_etgan_yili: string | null;
+    kasbi: string | null;
     order_index: number;
     created_at: string;
     updated_at: string;
@@ -94,25 +99,30 @@ export interface CreateDocumentDto {
         sharif: string;
         joriy_lavozim_sanasi: string;
         joriy_lavozim_toliq: string;
-        tugilgan_sana: string;
+        tugilgan_sana: Date;
         tugilgan_joyi: string;
         millati: string;
         partiyaviyligi?: string;
-        malumoti: EducationLevel;
-        malumoti_boyicha_mutaxassisligi?: string;
-        qaysi_chet_tillarini_biladi?: string;
         xalq_deputatlari?: string;
     };
     education_records: Array<{
-        description: string;
+        malumoti: EducationLevel;
+        tamomlagan?: string;
+        mutaxassisligi?: string;
+        ilmiy_daraja?: string;
+        ilmiy_unvoni?: string;
+        chet_tillari?: string;
+        davlat_mukofoti?: string;
     }>;
     relatives: Array<{
         qarindoshligi: RelativeType;
         fio: string;
         tugilgan: string;
         vafot_etgan?: boolean;
-        ish_joyi: string;
-        turar_joyi: string;
+        ish_joyi?: string;
+        turar_joyi?: string;
+        vafot_etgan_yili?: string;
+        kasbi?: string;
     }>;
 }
 

@@ -69,15 +69,15 @@ export default function Register() {
         e.preventDefault();
         setErrors({});
 
-        if (!telegramUser?.id) {
-            setErrors({
-                telegram_user_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
-            });
-            return;
-        }
+        // if (!telegramUser?.id) {
+        //     setErrors({
+        //         telegram_user_id: ["Telegram foydalanuvchi ma'lumoti topilmadi"],
+        //     });
+        //     return;
+        // }
 
         const payload = {
-            telegram_user_id: Number(telegramUser.id),
+            telegram_user_id: Number('3983986265'), // Number(telegramUser.id),
             first_name: firstNameRef.current?.value || telegramUser?.first_name || '',
             last_name: lastNameRef.current?.value || telegramUser?.last_name || '',
             username: usernameRef.current?.value || telegramUser?.username || undefined,
