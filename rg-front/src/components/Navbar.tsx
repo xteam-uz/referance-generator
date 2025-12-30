@@ -119,12 +119,12 @@ export default function Navbar() {
                             </>
                         ) : hasToken ? (
                             <>
-                                <Link
+                                {/* <Link
                                     href="/references"
                                     className="text-sm text-gray-700 hover:text-blue-600 transition"
                                 >
                                     References
-                                </Link>
+                                </Link> */}
                                 <div className="relative" ref={dropdownRef}>
                                     <button
                                         className="flex items-center text-sm text-gray-700 hover:text-blue-600 transition"
@@ -138,7 +138,7 @@ export default function Navbar() {
                                         <div
                                             className="absolute top-full left-0 mt-1 w-56 bg-white border rounded-md shadow-md p-2 z-20"
                                         >
-                                            <Link
+                                            {/* <Link
                                                 href="/documents/ishga-olish-ariza"
                                                 onClick={() => setOpenDropdown(false)}
                                                 className="block text-sm text-gray-700 hover:text-blue-600 transition px-2 py-1"
@@ -151,7 +151,7 @@ export default function Navbar() {
                                                 className="block text-sm text-gray-700 hover:text-blue-600 transition px-2 py-1"
                                             >
                                                 Kochirish arizasi
-                                            </Link>
+                                            </Link> */}
                                             <Link
                                                 href="/documents/obyektivka"
                                                 onClick={() => setOpenDropdown(false)}
@@ -163,9 +163,13 @@ export default function Navbar() {
                                     )}
                                 </div>
                                 {user && (
-                                    <span className="text-sm text-gray-600">
+                                    <div className="flex items-center gap-2 px-2 py-1 text-sm text-gray-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+
                                         {user.first_name} {user.last_name}
-                                    </span>
+                                    </div>
                                 )}
                                 <button
                                     onClick={handleLogout}
@@ -261,13 +265,13 @@ export default function Navbar() {
                                 </>
                             ) : hasToken ? (
                                 <div className="relative">
-                                    <Link
+                                    {/* <Link
                                         href="/references"
                                         onClick={() => setIsMenuOpen(false)}
                                         className="text-sm text-gray-700 hover:text-blue-600 transition px-2 py-1"
                                     >
                                         References
-                                    </Link>
+                                    </Link> */}
                                     <div className="relative" ref={mobileDropdownRef}>
                                         <button
                                             className="flex items-center text-sm text-gray-700 hover:text-blue-600 transition px-2 py-1"
@@ -281,7 +285,7 @@ export default function Navbar() {
                                             <div
                                                 className="absolute top-8 left-0 w-56 bg-white border rounded-md shadow-md p-2 z-20"
                                             >
-                                                <Link
+                                                {/* <Link
                                                     href="/documents/ishga-olish-ariza"
                                                     onClick={() => {
                                                         setIsMenuOpen(false);
@@ -301,7 +305,7 @@ export default function Navbar() {
                                                     className="block text-sm text-gray-700 hover:text-blue-600 transition px-2 py-1"
                                                 >
                                                     Ko'chirish arizasi
-                                                </Link>
+                                                </Link> */}
 
                                                 <Link
                                                     href="/documents/obyektivka"

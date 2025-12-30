@@ -16,21 +16,15 @@ class PersonalInformation extends Model
         'ism',
         'sharif',
         'photo_path',
-        'joriy_lavozim_sanasi',
-        'joriy_lavozim_toliq',
         'tugilgan_sana',
         'tugilgan_joyi',
         'millati',
-        'malumoti',
         'partiyaviyligi',
-        'malumoti_boyicha_mutaxassisligi',
-        'qaysi_chet_tillarini_biladi',
         'xalq_deputatlari',
     ];
 
     protected $casts = [
         'tugilgan_sana' => 'date',
-        'malumoti' => 'string',
     ];
 
     /**

@@ -59,13 +59,23 @@ export function useCreateDocument() {
             formData.append('personal_information[familya]', data.personal_information.familya);
             formData.append('personal_information[ism]', data.personal_information.ism);
             formData.append('personal_information[sharif]', data.personal_information.sharif);
-            formData.append('personal_information[joriy_lavozim_sanasi]', data.personal_information.joriy_lavozim_sanasi);
-            formData.append('personal_information[joriy_lavozim_toliq]', data.personal_information.joriy_lavozim_toliq);
             formData.append('personal_information[tugilgan_sana]', data.personal_information.tugilgan_sana.toISOString().split('T')[0]);
             formData.append('personal_information[tugilgan_joyi]', data.personal_information.tugilgan_joyi);
             formData.append('personal_information[millati]', data.personal_information.millati);
             formData.append('personal_information[partiyaviyligi]', data.personal_information.partiyaviyligi || '');
             formData.append('personal_information[xalq_deputatlari]', data.personal_information.xalq_deputatlari || '');
+
+            // Work experiences
+            data.work_experiences.forEach((workExp, index) => {
+                formData.append(`work_experiences[${index}][start_date]`, workExp.start_date.toISOString().split('T')[0]);
+                if (workExp.end_date) {
+                    formData.append(`work_experiences[${index}][end_date]`, workExp.end_date.toISOString().split('T')[0]);
+                } else {
+                    // end_date bo'sh bo'lsa, bo'sh string yuboramiz (backend null qabul qiladi)
+                    formData.append(`work_experiences[${index}][end_date]`, '');
+                }
+                formData.append(`work_experiences[${index}][info]`, workExp.info);
+            });
 
             // Education records
             data.education_records.forEach((record, index) => {
@@ -84,6 +94,9 @@ export function useCreateDocument() {
                 }
                 if (record.chet_tillari) {
                     formData.append(`education_records[${index}][chet_tillari]`, record.chet_tillari);
+                }
+                if (record.maxsus_unvoni) {
+                    formData.append(`education_records[${index}][maxsus_unvoni]`, record.maxsus_unvoni);
                 }
                 if (record.davlat_mukofoti) {
                     formData.append(`education_records[${index}][davlat_mukofoti]`, record.davlat_mukofoti);
@@ -150,7 +163,29 @@ export function useUpdateDocument() {
             if (data.personal_information) {
                 Object.entries(data.personal_information).forEach(([key, value]) => {
                     if (value !== undefined) {
-                        formData.append(`personal_information[${key}]`, value.toString());
+                        if (key === 'tugilgan_sana' && value instanceof Date) {
+                            formData.append(`personal_information[${key}]`, value.toISOString().split('T')[0]);
+                        } else {
+                            formData.append(`personal_information[${key}]`, value.toString());
+                        }
+                    }
+                });
+            }
+
+            // Work experiences
+            if (data.work_experiences) {
+                data.work_experiences.forEach((workExp, index) => {
+                    if (workExp.start_date instanceof Date) {
+                        formData.append(`work_experiences[${index}][start_date]`, workExp.start_date.toISOString().split('T')[0]);
+                    }
+                    if (workExp.end_date instanceof Date) {
+                        formData.append(`work_experiences[${index}][end_date]`, workExp.end_date.toISOString().split('T')[0]);
+                    } else {
+                        // end_date bo'sh bo'lsa, bo'sh string yuboramiz (backend null qabul qiladi)
+                        formData.append(`work_experiences[${index}][end_date]`, '');
+                    }
+                    if (workExp.info) {
+                        formData.append(`work_experiences[${index}][info]`, workExp.info);
                     }
                 });
             }
@@ -173,6 +208,9 @@ export function useUpdateDocument() {
                     }
                     if (record.chet_tillari) {
                         formData.append(`education_records[${index}][chet_tillari]`, record.chet_tillari);
+                    }
+                    if (record.maxsus_unvoni) {
+                        formData.append(`education_records[${index}][maxsus_unvoni]`, record.maxsus_unvoni);
                     }
                     if (record.davlat_mukofoti) {
                         formData.append(`education_records[${index}][davlat_mukofoti]`, record.davlat_mukofoti);

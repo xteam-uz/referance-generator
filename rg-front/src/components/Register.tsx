@@ -77,7 +77,7 @@ export default function Register() {
         // }
 
         const payload = {
-            telegram_user_id: Number('3983986265'), // Number(telegramUser.id),
+            telegram_user_id: Number(telegramUser.id),
             first_name: firstNameRef.current?.value || telegramUser?.first_name || '',
             last_name: lastNameRef.current?.value || telegramUser?.last_name || '',
             username: usernameRef.current?.value || telegramUser?.username || undefined,

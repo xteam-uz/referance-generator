@@ -39,10 +39,9 @@ class DocumentController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $rules = [
             'document_type' => 'required|in:obyektivka,ishga_olish_ariza,kochirish_ariza',
             // personal information
-            'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:1024',
             'personal_information' => 'required|array',
             'personal_information.familya' => 'required|string|max:255',
             'personal_information.ism' => 'required|string|max:255',
@@ -59,7 +58,7 @@ class DocumentController extends Controller
             'work_experiences.*.info' => 'required|string|max:255',
             // education records
             'education_records' => 'required|array',
-            'education_records.*.malumoti' => "required|in:Oliy,O'rta maxsus,O'rta",
+            'education_records.*.malumoti' => 'required|in:Олий,Махсус,Ўрта',
             'education_records.*.tamomlagan' => 'nullable|string|max:255',
             'education_records.*.mutaxassisligi' => 'nullable|string|max:255',
             'education_records.*.ilmiy_daraja' => 'nullable|string|max:255',
@@ -77,7 +76,14 @@ class DocumentController extends Controller
             'relatives.*.turar_joyi' => 'nullable|string|max:255',
             'relatives.*.vafot_etgan_yili' => 'nullable|string|max:255',
             'relatives.*.kasbi' => 'nullable|string|max:255',
-        ]);
+        ];
+
+        // Photo validatsiyasi - faqat fayl yuborilganda tekshiriladi
+        if ($request->hasFile('photo')) {
+            $rules['photo'] = 'required|image|mimes:jpeg,jpg,png|max:5120';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         // Custom validation: vafot_etgan true bo'lsa vafot_etgan_yili va kasbi required
         // vafot_etgan false bo'lsa ish_joyi va turar_joyi required
@@ -125,7 +131,44 @@ class DocumentController extends Controller
             $photoPath = null;
             if ($request->hasFile('photo')) {
                 $photo = $request->file('photo');
-                $photoPath = $photo->store('photos', 'public');
+
+                // Check if file is valid
+                if (!$photo->isValid()) {
+                    DB::rollBack();
+                    $errorCode = $photo->getError();
+                    $errorMessage = $photo->getErrorMessage();
+
+                    // Common PHP upload errors
+                    $errorMessages = [
+                        UPLOAD_ERR_INI_SIZE => 'Fayl hajmi PHP sozlamalaridagi maksimal hajmdan oshib ketdi (upload_max_filesize: ' . ini_get('upload_max_filesize') . ')',
+                        UPLOAD_ERR_FORM_SIZE => 'Fayl hajmi formadagi maksimal hajmdan oshib ketdi',
+                        UPLOAD_ERR_PARTIAL => 'Fayl qisman yuklandi',
+                        UPLOAD_ERR_NO_FILE => 'Fayl yuklanmadi',
+                        UPLOAD_ERR_NO_TMP_DIR => 'Vaqtincha saqlash papkasi topilmadi',
+                        UPLOAD_ERR_CANT_WRITE => 'Diskga yozishda xatolik',
+                        UPLOAD_ERR_EXTENSION => "Fayl yuklash PHP kengaytmasi tomonidan to'xtatildi",
+                    ];
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Fayl yuklashda xatolik',
+                        'error' => $errorMessages[$errorCode] ?? $errorMessage,
+                        'upload_max_filesize' => ini_get('upload_max_filesize'),
+                        'post_max_size' => ini_get('post_max_size'),
+                        'file_size' => $photo->getSize() ? number_format($photo->getSize() / 1024 / 1024, 2) . ' MB' : "Noma'lum",
+                    ], 422);
+                }
+
+                try {
+                    $photoPath = $photo->store('photos', 'public');
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Fayl saqlashda xatolik',
+                        'error' => $e->getMessage(),
+                    ], 422);
+                }
             }
 
             // Create personal information
@@ -181,12 +224,13 @@ class DocumentController extends Controller
             }
 
             // Create work experiences
-            foreach ($request->work_experiences as $workExperience) {
+            foreach ($request->work_experiences as $index => $workExperience) {
                 WorkExperience::create([
                     'document_id' => $document->id,
                     'start_date' => $workExperience['start_date'],
-                    'end_date' => $workExperience['end_date'],
+                    'end_date' => !empty($workExperience['end_date'] ?? null) ? $workExperience['end_date'] : null,
                     'info' => $workExperience['info'],
+                    'order_index' => $index,
                 ]);
             }
 
@@ -262,7 +306,7 @@ class DocumentController extends Controller
             'personal_information.familya' => 'sometimes|string|max:255',
             'personal_information.ism' => 'sometimes|string|max:255',
             'personal_information.sharif' => 'sometimes|string|max:255',
-            'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:1024',
+            'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
             'personal_information.joriy_lavozim_sanasi' => 'sometimes|string|max:255',
             'personal_information.joriy_lavozim_toliq' => 'sometimes|string|max:500',
             'personal_information.tugilgan_sana' => 'sometimes|date',
@@ -277,7 +321,7 @@ class DocumentController extends Controller
             'work_experiences.*.info' => 'sometimes|string|max:255',
             // education records
             'education_records' => 'sometimes|array',
-            'education_records.*.malumoti' => "sometimes|in:Oliy,O'rta maxsus,O'rta",
+            'education_records.*.malumoti' => 'sometimes|in:Олий,Махсус,Ўрта',
             'education_records.*.tamomlagan' => 'nullable|string|max:255',
             'education_records.*.mutaxassisligi' => 'nullable|string|max:255',
             'education_records.*.ilmiy_daraja' => 'nullable|string|max:255',
@@ -404,12 +448,13 @@ class DocumentController extends Controller
             // Update work experiences
             if ($request->has('work_experiences')) {
                 $document->workExperiences()->delete();
-                foreach ($request->work_experiences as $workExperience) {
+                foreach ($request->work_experiences as $index => $workExperience) {
                     WorkExperience::create([
                         'document_id' => $document->id,
                         'start_date' => $workExperience['start_date'],
-                        'end_date' => $workExperience['end_date'],
+                        'end_date' => !empty($workExperience['end_date'] ?? null) ? $workExperience['end_date'] : null,
                         'info' => $workExperience['info'],
+                        'order_index' => $index,
                     ]);
                 }
             }
@@ -513,7 +558,10 @@ class DocumentController extends Controller
             body { 
                 font-family: "Times New Roman", Times, serif; 
                 font-size: 12px; 
-                line-height: 1.4; 
+                line-height: 1.4;
+                max-width: 750px;
+                margin: 0 auto;
+                padding: 15px;
             }
             h1 { 
                 text-align: center; 
@@ -527,7 +575,7 @@ class DocumentController extends Controller
                 font-size: 14px; 
                 font-weight: bold; 
                 margin-top: 20px; 
-                margin-bottom: 10px; 
+                margin-bottom: 6px; 
             }
             .name-title { 
                 text-align: center; 
@@ -538,12 +586,12 @@ class DocumentController extends Controller
             .current-position {
                 text-align: left;
                 font-size: 12px;
-                margin-bottom: 15px;
+                margin-bottom: 6px;
                 padding-right: 140px;
             }
             .photo-container { 
                 position: absolute;
-                top: 15px;
+                top: 60px;
                 right: 20px;
                 width: 100px;
                 height: 133px;
@@ -557,20 +605,14 @@ class DocumentController extends Controller
                 margin-top: 15px;
                 padding-right: 120px;
             }
-            .info-row { 
-                margin-bottom: 8px; 
-                line-height: 1.5; 
-            }
             .info-label { 
                 font-size: 12px;
                 font-weight: bold;
                 display: block;
-                margin-bottom: 2px;
             }
             .info-value {
                 font-size: 11px;
                 display: block;
-                margin-bottom: 8px;
             }
             .two-column {
                 width: 100%;
@@ -597,7 +639,6 @@ class DocumentController extends Controller
             }
             table.relatives-table th { 
                 font-weight: bold; 
-                background-color: #f0f0f0;
             }
             .section-title { 
                 text-align: center; 
@@ -605,6 +646,11 @@ class DocumentController extends Controller
                 font-size: 14px; 
                 margin-top: 25px; 
                 margin-bottom: 15px; 
+            }
+            .page-break {
+                page-break-before: always !important;
+                break-before: page !important;
+                page-break-inside: avoid !important;
             }
             .work-history {
                 margin-top: 15px;
@@ -624,12 +670,32 @@ class DocumentController extends Controller
             $html .= '<div class="name-title">' . htmlspecialchars($fullName) . '</div>';
 
             // Current Position (optional - based on document data)
-            if ($document->document_type === 'obyektivka' && $pi) {
-                $currentDate = date('Y', strtotime($workExperiences[0]->start_date)) . ' йил ' . date('d', strtotime($workExperiences[0]->start_date)) . ' ' . $this->getMonthName(date('n', strtotime($workExperiences[0]->start_date))) . 'дан:';
-                $html .= '<div class="current-position">';
-                $html .= $currentDate . '<br>';
-                $html .= '<strong>' . htmlspecialchars($workExperiences[0]->info) . '</strong>';
-                $html .= '</div>';
+            // Eng so'nggi ishni topish (hozirgi vaqtda ishlayotgan yoki eng so'nggi order_index)
+            if ($document->document_type === 'obyektivka' && $pi && $workExperiences && count($workExperiences) > 0) {
+                $currentWork = null;
+
+                // Avval end_date null bo'lgan ishni qidiramiz (hozirgi vaqtda ishlayotgan)
+                // Agar bir nechta bo'lsa, eng so'nggi order_index ga ega bo'lganini olamiz
+                foreach ($workExperiences as $workExp) {
+                    if ($workExp->end_date === null) {
+                        if ($currentWork === null || $workExp->order_index > $currentWork->order_index) {
+                            $currentWork = $workExp;
+                        }
+                    }
+                }
+
+                // Agar hozirgi vaqtda ishlayotgan ish topilmasa, eng so'nggi order_index ga ega bo'lgan ishni olamiz
+                if ($currentWork === null) {
+                    $currentWork = $workExperiences[count($workExperiences) - 1];
+                }
+
+                if ($currentWork) {
+                    $currentDate = date('Y', strtotime($currentWork->start_date)) . ' йил ' . date('d', strtotime($currentWork->start_date)) . ' ' . $this->getMonthName(date('n', strtotime($currentWork->start_date))) . 'дан:';
+                    $html .= '<div class="current-position">';
+                    $html .= $currentDate . '<br>';
+                    $html .= '<strong>' . htmlspecialchars($currentWork->info) . '</strong>';
+                    $html .= '</div>';
+                }
             }
 
             // Photo
@@ -812,7 +878,7 @@ class DocumentController extends Controller
                     }
 
                     $html .= '<div style="margin-bottom: 8px; line-height: 1.6;">';
-                    $html .= '<p>' . htmlspecialchars($dateRange) . '</p> - ' . htmlspecialchars($workExp->info);
+                    $html .= '<p>' . htmlspecialchars($dateRange) . ' - ' . htmlspecialchars($workExp->info) . '</p>';
                     $html .= '</div>';
                 }
             } else {
@@ -823,8 +889,7 @@ class DocumentController extends Controller
 
             // === SECOND PAGE (Relatives) ===
             if ($relatives && count($relatives) > 0) {
-                $html .= '<pagebreak />';
-
+                $html .= '<div class="page-break">';
                 $html .= '<div class="name-title" style="margin-top: 20px;">' . htmlspecialchars($fullName) . ' яқин қариндошлари хақида</div>';
                 $html .= '<h2>МАЪЛУМОТ</h2>';
 
@@ -861,6 +926,7 @@ class DocumentController extends Controller
                 }
 
                 $html .= '</tbody></table>';
+                $html .= '</div>';  // Close page-break div
             }
 
             $html .= '</body></html>';
@@ -886,6 +952,7 @@ class DocumentController extends Controller
                 ->paperSize(210, 297, 'mm')  // A4 size
                 ->margins(15, 15, 20, 20, 'mm')  // top, right, bottom, left
                 ->showBackground()
+                ->setOption('preferCSSPageSize', true)  // CSS page-break ni qo'llab-quvvatlash
                 ->pdf();
 
             // Output PDF

@@ -26,7 +26,7 @@ export interface ApiResponse<T> {
 
 // Document types
 export type DocumentType = 'obyektivka' | 'ishga_olish_ariza' | 'kochirish_ariza';
-export type EducationLevel = 'Oliy' | 'O\'rta maxsus' | 'O\'rta';
+export type EducationLevel = 'Олий' | 'Махсус' | 'Ўрта';
 export type RelativeType = 'Otasi' | 'Onasi' | 'Akasi' | 'Ukasi' | 'Opasi';
 
 export interface PersonalInformation {
@@ -36,8 +36,6 @@ export interface PersonalInformation {
     ism: string;
     sharif: string;
     photo_path: string | null;
-    joriy_lavozim_sanasi: string;
-    joriy_lavozim_toliq: string;
     tugilgan_sana: string;
     tugilgan_joyi: string;
     millati: string;
@@ -56,6 +54,7 @@ export interface EducationRecord {
     ilmiy_daraja: string | null;
     ilmiy_unvoni: string | null;
     chet_tillari: string | null;
+    maxsus_unvoni: string | null;
     davlat_mukofoti: string | null;
     order_index: number;
     created_at: string;
@@ -78,6 +77,16 @@ export interface Relative {
     updated_at: string;
 }
 
+export interface WorkExperience {
+    id: number;
+    document_id: number;
+    start_date: string;
+    end_date: string | null;
+    info: string;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface Document {
     id: number;
     user_id: number;
@@ -88,6 +97,7 @@ export interface Document {
     personal_information?: PersonalInformation;
     education_records?: EducationRecord[];
     relatives?: Relative[];
+    work_experiences?: WorkExperience[];
 }
 
 export interface CreateDocumentDto {
@@ -97,14 +107,17 @@ export interface CreateDocumentDto {
         familya: string;
         ism: string;
         sharif: string;
-        joriy_lavozim_sanasi: string;
-        joriy_lavozim_toliq: string;
         tugilgan_sana: Date;
         tugilgan_joyi: string;
         millati: string;
         partiyaviyligi?: string;
         xalq_deputatlari?: string;
     };
+    work_experiences: Array<{
+        start_date: Date;
+        end_date?: Date | null;
+        info: string;
+    }>;
     education_records: Array<{
         malumoti: EducationLevel;
         tamomlagan?: string;
@@ -112,6 +125,7 @@ export interface CreateDocumentDto {
         ilmiy_daraja?: string;
         ilmiy_unvoni?: string;
         chet_tillari?: string;
+        maxsus_unvoni?: string;
         davlat_mukofoti?: string;
     }>;
     relatives: Array<{

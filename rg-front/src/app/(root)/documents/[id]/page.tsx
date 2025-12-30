@@ -80,7 +80,7 @@ export default function DocumentDetailPage() {
 
                 {pi && (
                     <div className="border rounded-lg p-6 space-y-4">
-                        <h2 className="text-2xl font-semibold mb-4">Shaxsiy ma'lumotlar</h2>
+                        <h2 className="text-2xl font-semibold mb-4">Шахсий маълумотлар</h2>
 
                         {pi.photo_path && (
                             <div className="mb-4">
@@ -98,75 +98,138 @@ export default function DocumentDetailPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <strong>Familya:</strong> {pi.familya}
+                                <strong>Фамилия:</strong> {pi.familya}
                             </div>
                             <div>
-                                <strong>Ism:</strong> {pi.ism}
+                                <strong>Исм:</strong> {pi.ism}
                             </div>
                             <div>
-                                <strong>Sharif:</strong> {pi.sharif}
+                                <strong>Шариф:</strong> {pi.sharif}
                             </div>
                             <div>
-                                <strong>Tug'ilgan sana:</strong>{' '}
+                                <strong>Тўғилган сана:</strong>{' '}
                                 {new Date(pi.tugilgan_sana).toLocaleDateString('uz-UZ')}
                             </div>
                             <div>
-                                <strong>Tug'ilgan joyi:</strong> {pi.tugilgan_joyi}
+                                <strong>Тўғилган жойи:</strong> {pi.tugilgan_joyi}
                             </div>
                             <div>
-                                <strong>Millati:</strong> {pi.millati}
+                                <strong>Миллати:</strong> {pi.millati}
                             </div>
                             <div>
-                                <strong>Ma'lumoti:</strong> {pi.malumoti}
+                                <strong>Партиявийлиги:</strong> {pi.partiyaviyligi || '-'}
                             </div>
-                            <div>
-                                <strong>Partiyaviyligi:</strong> {pi.partiyaviyligi || '-'}
-                            </div>
-                            <div>
-                                <strong>Ma'lumoti bo'yicha mutaxassisligi:</strong> {pi.malumoti_boyicha_mutaxassisligi || '-'}
-                            </div>
-                            <div>
-                                <strong>Qaysi chet tillarini biladi:</strong> {pi.qaysi_chet_tillarini_biladi || '-'}
-                            </div>
-                            <div>
-                                <strong>Joriy lavozim sanasi:</strong> {pi.joriy_lavozim_sanasi}
-                            </div>
-                        </div>
-                        <div>
-                            <strong>Joriy lavozim to'liq:</strong> {pi.joriy_lavozim_toliq}
                         </div>
                         {pi.xalq_deputatlari && (
                             <div>
-                                <strong>Xalq deputatlari respublika, viloyat, shahar va tuman Kengashi deputatimi yoki boshqa saylanadigan organlarning a'zosimi:</strong> {pi.xalq_deputatlari}
+                                <strong>Халқ депутатлари республика, вилоят, шаҳар ва туман Кенгаши депутатими ёки бошқа сайланадиган органларнинг аъзосими:</strong> {pi.xalq_deputatlari}
                             </div>
                         )}
                     </div>
                 )}
 
+                {document.work_experiences && document.work_experiences.length > 0 && (
+                    <div className="border rounded-lg p-6">
+                        <h2 className="text-2xl font-semibold mb-4">Меҳнат фаолияти</h2>
+                        <div className="space-y-4">
+                            {document.work_experiences.map((workExp, index) => (
+                                <div key={index} className="border rounded p-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                        <div>
+                                            <strong>Бошланган сана:</strong>{' '}
+                                            {new Date(workExp.start_date).toLocaleDateString('uz-UZ')}
+                                        </div>
+                                        <div>
+                                            <strong>Тугаган сана:</strong>{' '}
+                                            {workExp.end_date
+                                                ? new Date(workExp.end_date).toLocaleDateString('uz-UZ')
+                                                : 'Ҳозиргача вазифада'}
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <strong>Иш жойи ва лавозими:</strong> {workExp.info}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {document.education_records && document.education_records.length > 0 && (
                     <div className="border rounded-lg p-6">
-                        <h2 className="text-2xl font-semibold mb-4">Tamomlagan</h2>
-                        <ul className="list-disc list-inside space-y-2">
+                        <h2 className="text-2xl font-semibold mb-4">Маълумоти ва Таълим</h2>
+                        <div className="space-y-4">
                             {document.education_records.map((record, index) => (
-                                <li key={index}>{record.description}</li>
+                                <div key={index} className="border rounded p-4">
+                                    <h3 className="font-semibold mb-2">Таълим #{index + 1}</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                        <div>
+                                            <strong>Маълумоти:</strong> {record.malumoti}
+                                        </div>
+                                        {record.tamomlagan && (
+                                            <div>
+                                                <strong>Тамомлаган:</strong> {record.tamomlagan}
+                                            </div>
+                                        )}
+                                        {record.mutaxassisligi && (
+                                            <div>
+                                                <strong>Мутахассислиги:</strong> {record.mutaxassisligi}
+                                            </div>
+                                        )}
+                                        {record.ilmiy_daraja && (
+                                            <div>
+                                                <strong>Илмий даража:</strong> {record.ilmiy_daraja}
+                                            </div>
+                                        )}
+                                        {record.ilmiy_unvoni && (
+                                            <div>
+                                                <strong>Илмий унвони:</strong> {record.ilmiy_unvoni}
+                                            </div>
+                                        )}
+                                        {record.chet_tillari && (
+                                            <div>
+                                                <strong>Қайси чет тилларини билади:</strong> {record.chet_tillari}
+                                            </div>
+                                        )}
+                                        {record.maxsus_unvoni && (
+                                            <div>
+                                                <strong>Ҳарбий (махсус) унвони:</strong> {record.maxsus_unvoni}
+                                            </div>
+                                        )}
+                                        {record.davlat_mukofoti && (
+                                            <div>
+                                                <strong>Давлат мукофотлари:</strong> {record.davlat_mukofoti}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     </div>
                 )}
 
                 {document.relatives && document.relatives.length > 0 && (
                     <div className="border rounded-lg p-6">
-                        <h2 className="text-2xl font-semibold mb-4">Qarindoshlari haqida ma'lumot</h2>
+                        <h2 className="text-2xl font-semibold mb-4">Қариндошлари ҳақида маълумот</h2>
                         <div className="space-y-4">
                             {document.relatives.map((relative, index) => (
                                 <div key={index} className="border rounded p-4">
                                     <h3 className="font-semibold mb-2">{relative.qarindoshligi}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                        <div><strong>F.I.Sh:</strong> {relative.fio}</div>
-                                        <div><strong>Tug'ilgan:</strong> {relative.tugilgan}</div>
-                                        <div><strong>Vafot etgan:</strong> {relative.vafot_etgan ? 'Ha' : 'Yo\'q'}</div>
-                                        <div><strong>Ish joyi:</strong> {relative.ish_joyi}</div>
-                                        <div className="md:col-span-2"><strong>Turar joyi:</strong> {relative.turar_joyi}</div>
+                                        <div><strong>Ф.И.Ш:</strong> {relative.fio}</div>
+                                        <div><strong>Тўғилган:</strong> {relative.tugilgan}</div>
+                                        <div><strong>Вафот этган:</strong> {relative.vafot_etgan ? 'Ҳа' : 'Йўқ'}</div>
+                                        {relative.vafot_etgan ? (
+                                            <>
+                                                <div><strong>Вафот этган йили:</strong> {relative.vafot_etgan_yili || '-'}</div>
+                                                <div><strong>Касби:</strong> {relative.kasbi || '-'}</div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div><strong>Иш жойи ва лавозими:</strong> {relative.ish_joyi || '-'}</div>
+                                                <div className="md:col-span-2"><strong>Турар жойи:</strong> {relative.turar_joyi || '-'}</div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -177,4 +240,5 @@ export default function DocumentDetailPage() {
         </div>
     );
 }
+
 

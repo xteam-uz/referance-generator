@@ -29,21 +29,25 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
             familya: '',
             ism: '',
             sharif: '',
-            joriy_lavozim_sanasi: '',
-            joriy_lavozim_toliq: '',
             tugilgan_sana: new Date(),
             tugilgan_joyi: '',
             millati: '',
             partiyaviyligi: '',
             xalq_deputatlari: '',
         },
+        work_experiences: [{
+            start_date: new Date(),
+            end_date: null,
+            info: '',
+        }],
         education_records: [{
-            malumoti: 'Oliy',
+            malumoti: 'Олий',
             tamomlagan: '',
             mutaxassisligi: '',
             ilmiy_daraja: '',
             ilmiy_unvoni: '',
             chet_tillari: '',
+            maxsus_unvoni: '',
             davlat_mukofoti: '',
         }],
         relatives: [{
@@ -69,14 +73,21 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                         familya: pi.familya,
                         ism: pi.ism,
                         sharif: pi.sharif,
-                        joriy_lavozim_sanasi: pi.joriy_lavozim_sanasi,
-                        joriy_lavozim_toliq: pi.joriy_lavozim_toliq,
                         tugilgan_sana: new Date(pi.tugilgan_sana),
                         tugilgan_joyi: pi.tugilgan_joyi,
                         millati: pi.millati,
                         partiyaviyligi: pi.partiyaviyligi || '',
                         xalq_deputatlari: pi.xalq_deputatlari || '',
                     },
+                    work_experiences: existingDocument.work_experiences?.map(we => ({
+                        start_date: new Date(we.start_date),
+                        end_date: we.end_date ? new Date(we.end_date) : null,
+                        info: we.info,
+                    })) || [{
+                        start_date: new Date(),
+                        end_date: null,
+                        info: '',
+                    }],
                     education_records: existingDocument.education_records?.map(er => ({
                         malumoti: er.malumoti,
                         tamomlagan: er.tamomlagan || '',
@@ -84,14 +95,16 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                         ilmiy_daraja: er.ilmiy_daraja || '',
                         ilmiy_unvoni: er.ilmiy_unvoni || '',
                         chet_tillari: er.chet_tillari || '',
+                        maxsus_unvoni: er.maxsus_unvoni || '',
                         davlat_mukofoti: er.davlat_mukofoti || '',
                     })) || [{
-                        malumoti: 'Oliy',
+                        malumoti: 'Олий',
                         tamomlagan: '',
                         mutaxassisligi: '',
                         ilmiy_daraja: '',
                         ilmiy_unvoni: '',
                         chet_tillari: '',
+                        maxsus_unvoni: '',
                         davlat_mukofoti: '',
                     }],
                     relatives: existingDocument.relatives?.map(r => ({
@@ -134,16 +147,35 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
         }
     };
 
+    const addWorkExperience = () => {
+        setFormData({
+            ...formData,
+            work_experiences: [...formData.work_experiences, {
+                start_date: new Date(),
+                end_date: null,
+                info: '',
+            }],
+        });
+    };
+
+    const removeWorkExperience = (index: number) => {
+        if (formData.work_experiences.length > 1) {
+            const newExperiences = formData.work_experiences.filter((_, i) => i !== index);
+            setFormData({ ...formData, work_experiences: newExperiences });
+        }
+    };
+
     const addEducationRecord = () => {
         setFormData({
             ...formData,
             education_records: [...formData.education_records, {
-                malumoti: 'Oliy',
+                malumoti: 'Олий',
                 tamomlagan: '',
                 mutaxassisligi: '',
                 ilmiy_daraja: '',
                 ilmiy_unvoni: '',
                 chet_tillari: '',
+                maxsus_unvoni: '',
                 davlat_mukofoti: '',
             }],
         });
@@ -208,21 +240,25 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                         familya: '',
                         ism: '',
                         sharif: '',
-                        joriy_lavozim_sanasi: '',
-                        joriy_lavozim_toliq: '',
                         tugilgan_sana: new Date(),
                         tugilgan_joyi: '',
                         millati: '',
                         partiyaviyligi: '',
                         xalq_deputatlari: '',
                     },
+                    work_experiences: [{
+                        start_date: new Date(),
+                        end_date: null,
+                        info: '',
+                    }],
                     education_records: [{
-                        malumoti: 'Oliy',
+                        malumoti: 'Олий',
                         tamomlagan: '',
                         mutaxassisligi: '',
                         ilmiy_daraja: '',
                         ilmiy_unvoni: '',
                         chet_tillari: '',
+                        maxsus_unvoni: '',
                         davlat_mukofoti: '',
                     }],
                     relatives: [{
@@ -258,19 +294,19 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
             </h1>
 
             <form onSubmit={handleSubmit} className="pt-3">
-                <h4 className="pb-2 text-lg font-semibold mb-4">Ma'lumotlaringizni kiriting:</h4>
+                <h4 className="pb-2 text-lg font-semibold mb-4">Маълумотларингизни киритинг:</h4>
 
                 {/* Personal Information Section */}
                 <div className="flex flex-col md:flex-row gap-0 md:gap-4 mb-4">
                     <div className="flex-1 mb-4 md:mb-4">
                         <label htmlFor="Familya" className="block mb-2">
-                            Familya <span className="text-red-500">*</span>
+                            Фамилия <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             id="Familya"
                             required
-                            placeholder="Misol: Abdullayev"
+                            placeholder="Мисол: Абдуллаев"
                             className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.personal_information.familya}
                             onChange={(e) => setFormData({
@@ -282,13 +318,13 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
 
                     <div className="flex-1 mb-4 md:mb-4">
                         <label htmlFor="Ism" className="block mb-2">
-                            Ism <span className="text-red-500">*</span>
+                            Исм <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             id="Ism"
                             required
-                            placeholder="Misol: Botir"
+                            placeholder="Мисол: Ботир"
                             className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.personal_information.ism}
                             onChange={(e) => setFormData({
@@ -300,13 +336,13 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
 
                     <div className="flex-1 mb-4 md:mb-4">
                         <label htmlFor="Sharif" className="block mb-2">
-                            Sharif <span className="text-red-500">*</span>
+                            Шариф <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             id="Sharif"
                             required
-                            placeholder="Misol: Bahodirovich"
+                            placeholder="Мисол: Баходирович"
                             className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.personal_information.sharif}
                             onChange={(e) => setFormData({
@@ -320,7 +356,7 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                 {/* Rasm */}
                 <div className="mb-4">
                     <label htmlFor="Rasm" className="block mb-2">
-                        Rasm (3x4) {!documentId && <span className="text-red-500">*</span>}
+                        Расм (3x4) {!documentId && <span className="text-red-500">*</span>}
                     </label>
                     <input
                         type="file"
@@ -335,50 +371,12 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                             <img src={photoPreview} alt="Preview" className="w-32 h-40 object-cover rounded border" />
                         </div>
                     )}
-                    <small className="text-gray-500 text-sm">Format: .jpg,.jpeg,.png Maks: 1MB</small>
+                    <small className="text-gray-500 text-sm">Format: .jpg,.jpeg,.png Max: 5MB</small>
                 </div>
 
-                {/* Joriy lavozim */}
-                <div className="mb-4">
-                    <label htmlFor="Joriylavozimsanasi" className="block mb-2">
-                        Joriy lavozim sanasi <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        id="Joriylavozimsanasi"
-                        required
-                        placeholder="Misol: 2010 yil 06 sentabrdan"
-                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.personal_information.joriy_lavozim_sanasi}
-                        onChange={(e) => setFormData({
-                            ...formData,
-                            personal_information: { ...formData.personal_information, joriy_lavozim_sanasi: e.target.value }
-                        })}
-                    />
-                </div>
-
-                <div className="mb-4">
-                    <label htmlFor="Joriylavozimtoliq" className="block mb-2">
-                        Joriy lavozim to'liq <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        id="Joriylavozimtoliq"
-                        required
-                        placeholder="Misol: universitet ... kafedrasi mudiri"
-                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.personal_information.joriy_lavozim_toliq}
-                        onChange={(e) => setFormData({
-                            ...formData,
-                            personal_information: { ...formData.personal_information, joriy_lavozim_toliq: e.target.value }
-                        })}
-                    />
-                </div>
-
-                {/* Tug'ilgan sana va joyi */}
                 <div className="mb-4">
                     <label htmlFor="Tugilgansana" className="block mb-2">
-                        Tug'ilgan sana <span className="text-red-500">*</span>
+                        Тўғилган сана <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="date"
@@ -396,12 +394,12 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
 
                 <div className="mb-4">
                     <label htmlFor="Tugilganjoyi" className="block mb-2">
-                        Tug'ilgan joyi <span className="text-red-500">*</span>
+                        Тўғилган жойи <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
                         required
-                        placeholder="Misol: Qashqadaryo ..."
+                        placeholder="Мисол: Қашқадарё вилояти, Қарши тумани"
                         className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         id="Tugilganjoyi"
                         value={formData.personal_information.tugilgan_joyi}
@@ -416,12 +414,12 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                 <div className="flex flex-col md:flex-row gap-0 md:gap-4 mb-4">
                     <div className="flex-1 mb-4 md:mb-4">
                         <label htmlFor="Millati" className="block mb-2">
-                            Millati <span className="text-red-500">*</span>
+                            Миллати <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             required
-                            placeholder="Misol: o'zbek"
+                            placeholder="Мисол: ўзбек"
                             className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             id="Millati"
                             value={formData.personal_information.millati}
@@ -437,12 +435,12 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                 {/* Partiyaviyligi */}
                 <div className="mb-4">
                     <label htmlFor="Partiyaviyligi" className="block mb-2">
-                        Partiyaviyligi
+                        Партиявийлиги
                     </label>
                     <input
                         type="text"
                         id="Partiyaviyligi"
-                        placeholder="Misol: O'zbekiston Liberal Demokratik Partiyasi a'zosi"
+                        placeholder="Мисол: Ўзбекистон Либерал Демократик Партияси аъзоси"
                         className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={formData.personal_information.partiyaviyligi || ''}
                         onChange={(e) => setFormData({
@@ -452,14 +450,102 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                     />
                 </div>
 
+                {/* Mehnat Faoliyati */}
+                <div className="mb-4">
+                    <label className="block mb-2 font-semibold">Меҳнат фаолияти</label>
+                    {formData.work_experiences.map((workExp, index) => (
+                        <div key={index} className="mb-4 p-4 border border-gray-300 rounded">
+                            <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold">Иш тарихи #{index + 1}</h4>
+                                {index > 0 && (
+                                    <button
+                                        type="button"
+                                        className="w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none"
+                                        aria-label="Remove"
+                                        onClick={() => removeWorkExperience(index)}
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                <div>
+                                    <label className="block mb-1 text-sm">Бошланган сана <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="date"
+                                        required
+                                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={workExp.start_date.toISOString().split('T')[0]}
+                                        onChange={(e) => {
+                                            const newExperiences = [...formData.work_experiences];
+                                            newExperiences[index].start_date = new Date(e.target.value);
+                                            setFormData({ ...formData, work_experiences: newExperiences });
+                                        }}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block mb-1 text-sm">Тугаган сана</label>
+                                    <input
+                                        type="date"
+                                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={workExp.end_date ? workExp.end_date.toISOString().split('T')[0] : ''}
+                                        onChange={(e) => {
+                                            const newExperiences = [...formData.work_experiences];
+                                            newExperiences[index].end_date = e.target.value ? new Date(e.target.value) : null;
+                                            setFormData({ ...formData, work_experiences: newExperiences });
+                                        }}
+                                    />
+                                    <label className="flex items-center gap-2 mt-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={!workExp.end_date}
+                                            onChange={(e) => {
+                                                const newExperiences = [...formData.work_experiences];
+                                                newExperiences[index].end_date = e.target.checked ? null : new Date();
+                                                setFormData({ ...formData, work_experiences: newExperiences });
+                                            }}
+                                        />
+                                        <span className="text-sm">Ҳозиргача вазифада</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block mb-1 text-sm">Иш жойи ва лавозими <span className="text-red-500">*</span></label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="Мисол: &quot;UzAuto Motors&quot; акциядорлик жамияти ишлаб чиқаришни таъминлаш бошқармаси 2-таъминот бўлими консолидация бўлинмаси бошлиғи"
+                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={workExp.info}
+                                    onChange={(e) => {
+                                        const newExperiences = [...formData.work_experiences];
+                                        newExperiences[index].info = e.target.value;
+                                        setFormData({ ...formData, work_experiences: newExperiences });
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        className="w-full px-3 py-2 mt-2 border border-gray-300 rounded bg-white hover:bg-gray-400 text-sm text-gray-500 hover:text-white"
+                        onClick={addWorkExperience}
+                    >
+                        Иш тарихи қўшиш
+                    </button>
+                </div>
+
                 {/* Ma'lumoti va Ta'lim */}
                 <div className="mb-4">
-                    <label className="block mb-2">Ma'lumoti va Ta'lim</label>
+                    <label className="block mb-2 font-semibold">Маълумоти ва Таълим</label>
 
                     {formData.education_records.map((record, index) => (
                         <div key={index} className="mb-4 p-4 border border-gray-300 rounded">
                             <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-semibold">Ta'lim #{index + 1}</h4>
+                                <h4 className="font-semibold">Таълим #{index + 1}</h4>
                                 {index > 0 && (
                                     <button
                                         type="button"
@@ -473,7 +559,7 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                             </div>
 
                             <div className="mb-2">
-                                <label className="block mb-1 text-sm">Ma'lumoti <span className="text-red-500">*</span></label>
+                                <label className="block mb-1 text-sm">Маълумоти <span className="text-red-500">*</span></label>
                                 <select
                                     required
                                     className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -484,17 +570,17 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                                         setFormData({ ...formData, education_records: newRecords });
                                     }}
                                 >
-                                    <option value="Oliy">Oliy</option>
-                                    <option value="O'rta maxsus">O'rta maxsus</option>
-                                    <option value="O'rta">O'rta</option>
+                                    <option value="Олий">Олий</option>
+                                    <option value="Махсус">Махсус</option>
+                                    <option value="Ўрта">Ўрта</option>
                                 </select>
                             </div>
 
                             <div className="mb-2">
-                                <label className="block mb-1 text-sm">Tamomlagan</label>
+                                <label className="block mb-1 text-sm">Тамомлаган</label>
                                 <input
                                     type="text"
-                                    placeholder="Misol: 2022-yil O'zbekiston Milliy Universiteti"
+                                    placeholder="Мисол: 2006 й. Фарғона политехника институти (сиртқи)"
                                     className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={record.tamomlagan || ''}
                                     onChange={(e) => {
@@ -506,10 +592,10 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                             </div>
 
                             <div className="mb-2">
-                                <label className="block mb-1 text-sm">Mutaxassisligi</label>
+                                <label className="block mb-1 text-sm">Мутахассислиги</label>
                                 <input
                                     type="text"
-                                    placeholder="Misol: Falsafa"
+                                    placeholder="Мисол: технологик машина ва жихозлар"
                                     className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={record.mutaxassisligi || ''}
                                     onChange={(e) => {
@@ -521,10 +607,10 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                             </div>
 
                             <div className="mb-2">
-                                <label className="block mb-1 text-sm">Ilmiy daraja</label>
+                                <label className="block mb-1 text-sm">Илмий даража</label>
                                 <input
                                     type="text"
-                                    placeholder="Misol: Falsafa fanlari nomzodi (2003)"
+                                    placeholder="Мисол: фалсафа фанлари номзоди (2003)"
                                     className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={record.ilmiy_daraja || ''}
                                     onChange={(e) => {
@@ -536,10 +622,10 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                             </div>
 
                             <div className="mb-2">
-                                <label className="block mb-1 text-sm">Ilmiy unvoni</label>
+                                <label className="block mb-1 text-sm">Илмий унвони</label>
                                 <input
                                     type="text"
-                                    placeholder="Misol: Dotsent (2005)"
+                                    placeholder="Мисол: доцент (2005)"
                                     className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={record.ilmiy_unvoni || ''}
                                     onChange={(e) => {
@@ -551,10 +637,10 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                             </div>
 
                             <div className="mb-2">
-                                <label className="block mb-1 text-sm">Chet tillari</label>
+                                <label className="block mb-1 text-sm">Қайси чет тилларини билади</label>
                                 <input
                                     type="text"
-                                    placeholder="Misol: ingliz, rus, o'zbek"
+                                    placeholder="Мисол: рус тили"
                                     className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={record.chet_tillari || ''}
                                     onChange={(e) => {
@@ -566,10 +652,25 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                             </div>
 
                             <div className="mb-2">
-                                <label className="block mb-1 text-sm">Davlat mukofoti</label>
+                                <label className="block mb-1 text-sm">Ҳарбий (махсус) унвони</label>
                                 <input
                                     type="text"
-                                    placeholder="Misol: Mustaqillik ordeni (2011)"
+                                    placeholder="Мисол: капитан"
+                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={record.maxsus_unvoni || ''}
+                                    onChange={(e) => {
+                                        const newRecords = [...formData.education_records];
+                                        newRecords[index].maxsus_unvoni = e.target.value;
+                                        setFormData({ ...formData, education_records: newRecords });
+                                    }}
+                                />
+                            </div>
+
+                            <div className="mb-2">
+                                <label className="block mb-1 text-sm">Давлат мукофотлари</label>
+                                <input
+                                    type="text"
+                                    placeholder="Мисол: Мустақиллик ордени (2011)"
                                     className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={record.davlat_mukofoti || ''}
                                     onChange={(e) => {
@@ -586,7 +687,7 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                         className="w-full px-3 py-2 mt-2 border border-gray-300 rounded bg-white hover:bg-gray-400 text-sm text-gray-500 hover:text-white"
                         onClick={addEducationRecord}
                     >
-                        Ta'lim qo'shish
+                        Таълим қўшиш
                     </button>
                 </div>
 
@@ -594,12 +695,12 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                 {/* Xalq deputatlari */}
                 <div className="mb-4">
                     <label htmlFor="XalqDeputatlari" className="block mb-2">
-                        Xalq deputatlari respublika, viloyat, shahar va tuman Kengashi deputatimi yoki boshqa saylanadigan organlarning a'zosimi
+                        Халқ депутатлари республика, вилоят, шаҳар ва туман Кенгаши депутатими ёки бошқа сайланадиган органларнинг аъзосими
                     </label>
                     <textarea
                         id="XalqDeputatlari"
                         rows={3}
-                        placeholder="Misol: O'zbekiston Respublikasi Oliy Majlisi deputati"
+                        placeholder="Мисол: Ўзбекистон Республикаси Олий Мажлиси депутати"
                         className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={formData.personal_information.xalq_deputatlari || ''}
                         onChange={(e) => setFormData({
@@ -611,15 +712,15 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
 
                 {/* Qarindoshlar bloki */}
                 <hr className="my-4 border-gray-300" />
-                <h5 className="block mb-4 text-lg font-semibold">Qarindoshlari haqida ma'lumot</h5>
+                <h5 className="block mb-4 text-lg font-semibold">Қариндошлари ҳақида маълумот</h5>
                 {formData.relatives.map((relative, index) => (
                     <div key={index} className="mb-4 flex gap-2">
                         <div className="w-full">
                             <h6 className="mb-3 font-semibold">
-                                {index + 1}. Qarindosh - <b>{relative.qarindoshligi}</b>
+                                {index + 1}. Қариндош - <b>{relative.qarindoshligi}</b>
                             </h6>
                             <label htmlFor={`Qarindoshligi-${index}`} className="block mb-2">
-                                Qarindoshligi <span className="text-red-500">*</span>
+                                Қариндошлиги <span className="text-red-500">*</span>
                             </label>
                             <select
                                 id={`Qarindoshligi-${index}`}
@@ -646,7 +747,7 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                                 id={`FIO-${index}`}
                                 type="text"
                                 required
-                                placeholder="Misol: Abdullayev Bahodir Salimo"
+                                placeholder="Мисол: Абдуллаев Баҳодир Салимович"
                                 className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={relative.fio}
                                 onChange={(e) => {
@@ -657,13 +758,13 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                             />
 
                             <label htmlFor={`Tugilgan-${index}`} className="mt-3 block mb-2">
-                                Tug'ilgan yili va joyi <span className="text-red-500">*</span>
+                                Тўғилган йили ва жойи <span className="text-red-500">*</span>
                             </label>
                             <input
                                 id={`Tugilgan-${index}`}
                                 type="text"
                                 required
-                                placeholder="Misol: 1941 yil, Samarqand shahr"
+                                placeholder="Мисол: 1941 йил, Самарқанд шаҳри"
                                 className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={relative.tugilgan}
                                 onChange={(e) => {
@@ -693,13 +794,13 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                                         setFormData({ ...formData, relatives: newRelatives });
                                     }}
                                 />
-                                <span>Vafot etgan</span>
+                                <span>Вафот этган</span>
                             </label>
 
                             {relative.vafot_etgan ? (
                                 <>
                                     <label htmlFor={`VafotEtganYili-${index}`} className="block mb-2">
-                                        Vafot etgan yili <span className="text-red-500">*</span>
+                                        Вафот этган йили <span className="text-red-500">*</span>
                                     </label>
                                     <select
                                         id={`VafotEtganYili-${index}`}
@@ -712,7 +813,7 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                                             setFormData({ ...formData, relatives: newRelatives });
                                         }}
                                     >
-                                        <option value="">Yilni tanlang</option>
+                                        <option value="">Йилни танланг</option>
                                         {Array.from({ length: new Date().getFullYear() - 1900 + 1 }, (_, i) => {
                                             const year = 1900 + i;
                                             return (
@@ -724,13 +825,13 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                                     </select>
 
                                     <label htmlFor={`Kasbi-${index}`} className="mt-3 block mb-2">
-                                        Kasbi <span className="text-red-500">*</span>
+                                        Касби <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         id={`Kasbi-${index}`}
                                         type="text"
                                         required
-                                        placeholder="Misol: maktab o'qituvchisi"
+                                        placeholder="Мисол: мактаб ўқитувчиси"
                                         className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         value={relative.kasbi || ''}
                                         onChange={(e) => {
@@ -743,13 +844,13 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                             ) : (
                                 <>
                                     <label htmlFor={`Ishjoyi-${index}`} className="block mb-2">
-                                        Ish joyi va lavozimi <span className="text-red-500">*</span>
+                                        Иш жойи ва лавозими <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         id={`Ishjoyi-${index}`}
                                         type="text"
                                         required
-                                        placeholder="Misol: Pensiyada (Toshkent davla"
+                                        placeholder="Мисол: Пенсияда (Тошкент давлат"
                                         className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         value={relative.ish_joyi || ''}
                                         onChange={(e) => {
@@ -760,13 +861,13 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                                     />
 
                                     <label htmlFor={`Turarjoyi-${index}`} className="mt-3 block mb-2">
-                                        Turar joyi <span className="text-red-500">*</span>
+                                        Турар жойи <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         id={`Turarjoyi-${index}`}
                                         type="text"
                                         required
-                                        placeholder="Misol: Toshkent shahri, Mirzo Ul"
+                                        placeholder="Мисол: Тошкент шаҳри, Мирзо Улуғбек тумани"
                                         className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         value={relative.turar_joyi || ''}
                                         onChange={(e) => {
@@ -784,7 +885,7 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                                     onClick={() => removeRelative(index)}
                                     className="mt-3 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                                 >
-                                    Qarindoshni o'chirish
+                                    Қариндошни ўчириш
                                 </button>
                             )}
                         </div>
@@ -795,7 +896,7 @@ export default function DocumentForm({ documentType, documentId }: DocumentFormP
                     onClick={addRelative}
                     className="w-full px-3 py-2 my-2 border border-gray-300 rounded bg-white hover:bg-gray-100 text-sm"
                 >
-                    Qarindosh qo'shish
+                    Қариндош қўшиш
                 </button>
 
                 {message && (

@@ -1,0 +1,13 @@
+# Agar .htaccess ishlatilsa, quyidagi sozlamalarni .htaccess ga qo'shing:
+# php_value upload_max_filesize 10M
+# php_value post_max_size 12M
+# php_value max_execution_time 300
+# php_value max_input_time 300
+
+# Agar Nginx ishlatilsa, nginx.conf ga quyidagilarni qo'shing:
+# client_max_body_size 12M;
+
+# PHP.ini ni o'zgartirish kerak bo'lsa:
+# /etc/php/8.5/fpm/php.ini yoki /etc/php/8.5/apache2/php.ini faylida:
+# upload_max_filesize = 10M
+# post_max_size = 12M

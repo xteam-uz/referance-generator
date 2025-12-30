@@ -12,6 +12,7 @@ class WorkExperience extends Model
         'start_date',
         'end_date',
         'info',
+        'order_index',
     ];
 
     public function document(): BelongsTo

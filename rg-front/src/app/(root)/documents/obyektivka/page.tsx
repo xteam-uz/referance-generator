@@ -26,7 +26,7 @@ export default function ObyektivkaPage() {
                     onClick={() => router.push('/documents')}
                     className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
                 >
-                    ← Orqaga
+                    Orqaga
                 </button>
             </div>
             <DocumentForm documentType="obyektivka" />
